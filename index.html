@@ -86,13 +86,7 @@
         input[type="text"]:focus { border-color: #2d5016; }
         input[type="number"] { width: 70px; }
 
-        .markup-wrap {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 14px;
-            color: #555;
-        }
+
 
         #resultsCount {
             color: #888;
@@ -174,15 +168,6 @@
         .tab-content.active { display: block; }
 
         .retail {
-            font-weight: 600;
-            color: #27ae60;
-        }
-
-        .wholesale {
-            color: #555;
-        }
-
-        /* Month filter options */
         #monthFilter option { color: #333; }
 
         /* Responsive */
@@ -229,12 +214,7 @@
             <select id="monthFilter" onchange="filter()">
                 <option value="">All Production Dates</option>
             </select>
-            <div class="markup-wrap">
-                Retail Markup:
-                <input type="number" id="markupInput" value="50" min="0" max="200" style="width:70px" onchange="filter()">
-                %
-            </div>
-            <span id="resultsCount"></span>
+            <span id="resultsCount" style="color: #888; font-size: 13px; margin-left: auto;"></span>
         </div>
     </div>
 
@@ -291,8 +271,6 @@
                         <th id="col-1gallon-date" onclick="sort('1gallon','date')">Production Date</th>
                         <th id="col-1gallon-qty" onclick="sort('1gallon','qty')">Quantity</th>
                         <th>Size</th>
-                        <th onclick="sort('1gallon','price_1gal')" id="col-1gallon-price_1gal">Wholesale</th>
-                        <th id="col-1gallon-retail">Retail</th>
                         <th>Notes</th>
                     </tr>
                 </thead>
@@ -311,8 +289,6 @@
                         <th id="col-5gallon-date" onclick="sort('5gallon','date')">Production Date</th>
                         <th id="col-5gallon-qty" onclick="sort('5gallon','qty')">Quantity</th>
                         <th>Size</th>
-                        <th onclick="sort('5gallon','price_5gal')" id="col-5gallon-price_5gal">Wholesale</th>
-                        <th id="col-5gallon-retail">Retail</th>
                         <th>Notes</th>
                     </tr>
                 </thead>
@@ -346,7 +322,6 @@
     let filtered = { liners: [], '4inch': [], '1gallon': [], '5gallon': [] };
     let sortCol = { liners: 'date', '4inch': 'date', '1gallon': 'date', '5gallon': 'date', all: 'name' };
     let sortAsc = { liners: false, '4inch': false, '1gallon': false, '5gallon': false, all: true };
-    let markup = 50;
     let monthFilter = '';
 
     // ── INIT ──────────────────────────────────────────────────────────
@@ -390,7 +365,6 @@
     function applyFilter() {
         const q = document.getElementById('searchInput').value.toLowerCase().trim();
         const monthVal = document.getElementById('monthFilter').value;
-        markup = parseInt(document.getElementById('markupInput').value) || 50;
 
         ['liners','4inch','1gallon','5gallon'].forEach(tab => {
             filtered[tab] = DATA[tab].filter(row => {
@@ -418,7 +392,7 @@
             sortAsc[tab] = !sortAsc[tab];
         } else {
             sortCol[tab] = col;
-            sortAsc[tab] = col === 'name' || col === 'price_1gal' || col === 'price_5gal' || col === 'size';
+            sortAsc[tab] = col === 'name' || col === 'size';
         }
         applySort(tab);
         render();
@@ -433,9 +407,6 @@
             let av = a[col] || '';
             let bv = b[col] || '';
             if (col === 'qty') { av = parseInt(av) || 0; bv = parseInt(bv) || 0; }
-            if (col === 'price_1gal' || col === 'price_5gal') {
-                av = parseFloat(av) || 0; bv = parseFloat(bv) || 0;
-            }
             if (av < bv) return asc ? -1 : 1;
             if (av > bv) return asc ? 1 : -1;
             return 0;
@@ -459,13 +430,6 @@
     function fmt(n) {
         if (!n || n === '0') return '—';
         return parseInt(n).toLocaleString();
-    }
-
-    function calcRetail(wholesale) {
-        if (!wholesale) return '';
-        const w = parseFloat(wholesale);
-        if (isNaN(w) || w === 0) return '';
-        return (w * (1 + markup / 100)).toFixed(2);
     }
 
     function qtyClass(qty) {
@@ -496,29 +460,21 @@
         }
 
         if (tab === '1gallon') {
-            const ws = row.price_1gal || '';
-            const ret = calcRetail(ws);
             return `<tr>
                 <td>${row.plant}</td>
                 <td>${row.date}</td>
                 <td class="qty ${qtyCls}">${qty}</td>
                 <td>${row.size}</td>
-                <td class="wholesale">${ws ? '$' + ws : '—'}</td>
-                <td class="retail">${ret ? '$' + ret : '—'}</td>
                 <td>${row.notes}</td>
             </tr>`;
         }
 
         if (tab === '5gallon') {
-            const ws = row.price_5gal || '';
-            const ret = calcRetail(ws);
             return `<tr>
                 <td>${row.plant}</td>
                 <td>${row.date}</td>
                 <td class="qty ${qtyCls}">${qty}</td>
                 <td>${row.size}</td>
-                <td class="wholesale">${ws ? '$' + ws : '—'}</td>
-                <td class="retail">${ret ? '$' + ret : '—'}</td>
                 <td>${row.notes}</td>
             </tr>`;
         }
@@ -557,7 +513,7 @@
 
     function updateSortHeaders() {
         ['liners','4inch','1gallon','5gallon','all'].forEach(tab => {
-            ['name','date','qty','price_1gal','price_5gal','size'].forEach(col => {
+            ['name','date','qty','size'].forEach(col => {
                 const el = document.getElementById(`col-${tab}-${col}`);
                 if (!el) return;
                 el.classList.remove('sort-asc','sort-desc');
