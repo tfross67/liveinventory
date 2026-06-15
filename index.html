@@ -380,6 +380,12 @@
                 return true;
             });
         });
+
+        // Build combined 'all' tab from filtered individual tabs
+        filtered.all = ['liners','4inch','1gallon','5gallon'].flatMap(t =>
+            filtered[t].map(r => ({...r, _tab: t}))
+        );
+
         applySort(currentTab);
         render();
     }
@@ -409,19 +415,6 @@
             if (col === 'qty') { av = parseInt(av) || 0; bv = parseInt(bv) || 0; }
             if (av < bv) return asc ? -1 : 1;
             if (av > bv) return asc ? 1 : -1;
-            return 0;
-        });
-
-        // Keep 'all' tab sorted by tab order then by its own sort
-        if (tab !== 'all') return;
-        filtered.all = ['liners','4inch','1gallon','5gallon'].flatMap(t =>
-            filtered[t].map(r => ({...r, _tab: t}))
-        );
-        filtered.all.sort((a, b) => {
-            const av = sortCol.all === 'name' ? a.plant.toLowerCase() : (a[sortCol.all] || '');
-            const bv = sortCol.all === 'name' ? b.plant.toLowerCase() : (b[sortCol.all] || '');
-            if (av < bv) return sortAsc.all ? -1 : 1;
-            if (av > bv) return sortAsc.all ? 1 : -1;
             return 0;
         });
     }
