@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Native Sons — Plant Availability</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #1a1a1a;
+      --surface: #242424;
+      --surface2: #2e2e2e;
+      --border: #383838;
+      --text: #e8e8e8;
+      --text-muted: #999;
+      --accent: #7cb342;
+      --accent-hover: #9ccc65;
+      --danger: #ef5350;
+      --liner's: #81c784;
+      --4in: #64b5f6;
+      --1gal: #ffb74d;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* ── HEADER ─────────────────────────────────────────── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+
+    .last-updated {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* ── SEARCH BAR ──────────────────────────────────────── */
+    .search-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .search-wrap svg {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    #search-input {
+      width: 100%;
+      padding: 0.6rem 1rem 0.6rem 2.5rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    #search-input:focus { border-color: var(--accent); }
+    #search-input::placeholder { color: var(--text-muted); }
+
+    /* ── FILTERS ────────────────────────────────────────── */
+    .filters {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .filter-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-right: 0.25rem;
+    }
+
+    .pill {
+      padding: 0.3rem 0.75rem;
+      border-radius: 100px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text-muted);
+      transition: all 0.15s;
+      user-select: none;
+    }
+
+    .pill:hover { border-color: var(--text-muted); color: var(--text); }
+
+    .pill.active[data-tab="all"]       { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .pill.active[data-tab="Liner"]     { background: var(--liner's); border-color: var(--liner's); color: #1a1a1a; }
+    .pill.active[data-tab="Four Inch"] { background: var(--4in); border-color: var(--4in); color: #1a1a1a; }
+    .pill.active[data-tab="One Gallon"]{ background: var(--1gal); border-color: var(--1gal); color: #1a1a1a; }
+
+    .sort-select {
+      padding: 0.3rem 0.6rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      color: var(--text);
+      font-size: 0.8rem;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* ── STATS BAR ──────────────────────────────────────── */
+    .stats-bar {
+      max-width: 1400px;
+      margin: 0.75rem auto 0;
+      padding: 0 1.5rem;
+      display: flex;
+      gap: 1.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+
+    .stat { display: flex; align-items: center; gap: 0.4rem; }
+    .stat-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .stat-dot.liner { background: var(--liner's); }
+    .stat-dot.4in { background: var(--4in); }
+    .stat-dot.1gal { background: var(--1gal); }
+
+    /* ── RESULTS ─────────────────────────────────────────── */
+    main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem 3rem;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 0.75rem;
+    }
+
+    /* ── CARD ───────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      transition: border-color 0.15s, transform 0.1s;
+      cursor: default;
+    }
+
+    .card:hover {
+      border-color: var(--text-muted);
+      transform: translateY(-1px);
+    }
+
+    .card-liner  { border-left: 3px solid var(--liner's); }
+    .card-4in    { border-left: 3px solid var(--4in); }
+    .card-1gal   { border-left: 3px solid var(--1gal); }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .card-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .card-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 100px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .badge-liner  { background: rgba(129,199,132,0.2); color: var(--liner's); }
+    .badge-4in    { background: rgba(100,181,246,0.2); color: var(--4in); }
+    .badge-1gal   { background: rgba(255,183,77,0.2); color: var(--1gal); }
+
+    .card-meta {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .card-meta span { display: flex; align-items: center; gap: 0.3rem; }
+
+    .card-qty {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .card-qty.low { color: var(--danger); }
+
+    .card-notes {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-top: 0.2rem;
+    }
+
+    /* ── EMPTY STATE ────────────────────────────────────── */
+    .empty {
+      text-align: center;
+      padding: 4rem 1rem;
+      color: var(--text-muted);
+    }
+
+    .empty svg { margin-bottom: 1rem; opacity: 0.4; }
+    .empty h3 { font-size: 1.1rem; margin-bottom: 0.4rem; color: var(--text); }
+    .empty p { font-size: 0.9rem; }
+
+    /* ── COPY URL ───────────────────────────────────────── */
+    #copy-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.35rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    #copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+    #copy-btn.copied { border-color: var(--accent); color: var(--accent); }
+
+    /* ── RESPONSIVE ─────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .results-grid { grid-template-columns: 1fr; }
+      .header-inner { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-top">
+      <div class="logo">🌿 Native Sons — Plant Availability</div>
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <button id="copy-btn" onclick="copyShareUrl()">🔗 Share</button>
+        <span class="last-updated">2024 season</span>
+      </div>
+    </div>
+
+    <div class="search-row">
+      <div class="search-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="search-input" type="text" placeholder="Search by plant name, size, or notes…" autofocus>
+      </div>
+    </div>
+
+    <div class="filters">
+      <span class="filter-label">Tab:</span>
+      <button class="pill active" data-tab="all"       onclick="setTab('all')">All</button>
+      <button class="pill"        data-tab="Liner Inventory"        onclick="setTab('Liner Inventory')">🌱 Liner</button>
+      <button class="pill"        data-tab="Four Inch Production"    onclick="setTab('Four Inch Production')">4″ Production</button>
+      <button class="pill"        data-tab="One Gallon Production"    onclick="setTab('One Gallon Production')">1 Gallon</button>
+
+      <span class="filter-label" style="margin-left:0.5rem;">Sort:</span>
+      <select class="sort-select" id="sort-select" onchange="render()">
+        <option value="name-asc">Name A→Z</option>
+        <option value="name-desc">Name Z→A</option>
+        <option value="qty-desc" selected>Qty: High→Low</option>
+        <option value="qty-asc">Qty: Low→High</option>
+        <option value="date-desc">Newest First</option>
+        <option value="date-asc">Oldest First</option>
+      </select>
+    </div>
+  </div>
+</header>
+
+<div class="stats-bar" id="stats-bar"></div>
+
+<main>
+  <div class="results-header">
+    <span id="results-count"></span>
+    <span id="results-filtered"></span>
+  </div>
+  <div class="results-grid" id="results-grid"></div>
+  <div class="empty" id="empty-state" style="display:none;">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 6v4m0 4h.01"/></svg>
+    <h3>No plants found</h3>
+    <p>Try a different search or clear your filters.</p>
+  </div>
+</main>
+
+<script>
+// ── DATA (loaded from inventory_data.js) ──────────────────────────────
+const SHEETS = {
+  'Liner Inventory':       'Liner',
+  'Four Inch Production':  '4in',
+  'One Gallon Production': '1gal'
+};
+
+let currentTab = 'all';
+let searchQuery = '';
+
+// ── URL STATE ──────────────────────────────────────────────────────────
+function syncToUrl() {
+  const params = new URLSearchParams();
+  if (currentTab !== 'all') params.set('tab', currentTab);
+  if (searchQuery) params.set('q', searchQuery);
+  const newUrl = params.toString() ? '?' + params.toString() : window.location.pathname;
+  history.replaceState(null, '', newUrl);
+}
+
+function loadFromUrl() {
+  const p = new URLSearchParams(window.location.search);
+  currentTab = p.get('tab') || 'all';
+  searchQuery = p.get('q') || '';
+  document.getElementById('search-input').value = searchQuery;
+  updatePillStyles();
+}
+
+function copyShareUrl() {
+  syncToUrl();
+  navigator.clipboard.writeText(window.location.href).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '🔗 Share'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ── FILTERING ─────────────────────────────────────────────────────────
+function getFiltered() {
+  const q = searchQuery.toLowerCase().trim();
+  let results = [];
+
+  const tabs = currentTab === 'all'
+    ? Object.keys(INVENTORY)
+    : [currentTab];
+
+  for (const sheetName of tabs) {
+    for (const row of INVENTORY[sheetName]) {
+      if (!q) {
+        results.push({ ...row, _sheet: sheetName });
+      } else {
+        const haystack = [row.plant, row.size, row.notes, row.cuttings, row.date]
+          .join(' ').toLowerCase();
+        if (haystack.includes(q)) {
+          results.push({ ...row, _sheet: sheetName });
+        }
+      }
+    }
+  }
+
+  return results;
+}
+
+// ── SORTING ────────────────────────────────────────────────────────────
+function sortResults(rows) {
+  const sortBy = document.getElementById('sort-select').value;
+  const [field, dir] = sortBy.split('-');
+
+  rows.sort((a, b) => {
+    let av, bv;
+    if (field === 'name') {
+      av = a.plant.toLowerCase();
+      bv = b.plant.toLowerCase();
+      return dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    }
+    if (field === 'qty') {
+      av = parseInt(a.quantity) || 0;
+      bv = parseInt(b.quantity) || 0;
+      return dir === 'asc' ? av - bv : bv - av;
+    }
+    if (field === 'date') {
+      av = a.date || '';
+      bv = b.date || '';
+      return dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    }
+    return 0;
+  });
+
+  return rows;
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────
+function qtyClass(qty) {
+  const n = parseInt(qty);
+  if (!n || n === 0) return 'low';
+  if (n < 50) return 'low';
+  return '';
+}
+
+function badgeLabel(sheet) {
+  if (sheet === 'Liner Inventory') return '🌱 Liner';
+  if (sheet === 'Four Inch Production') return '4″ Prod';
+  if (sheet === 'One Gallon Production') return '1 Gallon';
+  return sheet;
+}
+
+function cardIcon(sheet) {
+  if (sheet === 'Liner Inventory') return '🌱';
+  if (sheet === 'Four Inch Production') return '🪴';
+  if (sheet === 'One Gallon Production') return '🫒';
+  return '🌿';
+}
+
+function render() {
+  const rows = sortResults(getFiltered());
+  const grid = document.getElementById('results-grid');
+  const empty = document.getElementById('empty-state');
+  const totalEl = document.getElementById('results-count');
+  const filteredEl = document.getElementById('results-filtered');
+
+  // Stats
+  const byTab = {};
+  let grandTotal = 0;
+  for (const sheetName of Object.keys(INVENTORY)) {
+    let sheetTotal = 0;
+    for (const r of INVENTORY[sheetName]) {
+      const n = parseInt(r.quantity);
+      if (!isNaN(n) && n > 0) { sheetTotal += n; grandTotal += n; }
+    }
+    byTab[sheetName] = sheetTotal;
+  }
+
+  const statBar = document.getElementById('stats-bar');
+  const tabLabels = {
+    'Liner Inventory': '🌱 Liner',
+    'Four Inch Production': '🪴 4″',
+    'One Gallon Production': '🫒 1 Gal'
+  };
+  statBar.innerHTML = Object.entries(byTab).map(([k, v]) =>
+    `<div class="stat"><span class="stat-dot ${k === 'Liner Inventory' ? 'liner' : k === 'Four Inch Production' ? '4in' : '1gal'}"></span>${tabLabels[k]}: <strong>${v.toLocaleString()}</strong> units</div>`
+  ).join('') + `<div class="stat">📦 Total: <strong>${grandTotal.toLocaleString()}</strong> units</div>`;
+
+  totalEl.textContent = `${rows.length.toLocaleString()} records`;
+  filteredEl.textContent = searchQuery ? `filtered from ${Object.values(INVENTORY).reduce((a, s) => a + s.length, 0).toLocaleString()} total` : '';
+
+  if (rows.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  grid.innerHTML = rows.map(r => {
+    const abbrev = SHEETS[r._sheet] || 'liner';
+    const qtyCls = qtyClass(r.quantity);
+    const notesHtml = r.notes ? `<div class="card-notes">${r.notes}</div>` : '';
+
+    return `
+    <div class="card card-${abbrev}">
+      <div class="card-top">
+        <div class="card-name">${r.plant}</div>
+        <span class="card-badge badge-${abbrev}">${badgeLabel(r._sheet)}</span>
+      </div>
+      <div class="card-meta">
+        ${r.date ? `<span>📅 ${r.date}</span>` : ''}
+        ${r.size ? `<span>📐 ${r.size}</span>` : ''}
+        ${r.cuttings ? `<span>🌱 ${r.cuttings}</span>` : ''}
+      </div>
+      <div class="card-qty ${qtyCls}">
+        ${r.quantity ? parseInt(r.quantity).toLocaleString() + ' units' : '—'}
+      </div>
+      ${notesHtml}
+    </div>`;
+  }).join('');
+}
+
+// ── TAB SELECTION ─────────────────────────────────────────────────────
+function setTab(tab) {
+  currentTab = tab;
+  updatePillStyles();
+  syncToUrl();
+  render();
+}
+
+function updatePillStyles() {
+  document.querySelectorAll('.pill[data-tab]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === currentTab);
+  });
+}
+
+// ── SEARCH ─────────────────────────────────────────────────────────────
+let searchTimeout;
+document.getElementById('search-input').addEventListener('input', () => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    searchQuery = document.getElementById('search-input').value;
+    syncToUrl();
+    render();
+  }, 200);
+});
+
+// ── INIT ───────────────────────────────────────────────────────────────
+loadFromUrl();
+render();
+</script>
+</body>
+</html>
