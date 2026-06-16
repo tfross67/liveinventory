@@ -413,6 +413,14 @@
             let av = a[col] || '';
             let bv = b[col] || '';
             if (col === 'qty') { av = parseInt(av) || 0; bv = parseInt(bv) || 0; }
+            if (col === 'date') {
+                const parse = s => {
+                    if (!s) return 0;
+                    const [m, d, y] = s.split('/').map(Number);
+                    return (2000 + y) * 10000 + m * 100 + d;  // YYYYMMDD integer
+                };
+                av = parse(av); bv = parse(bv);
+            }
             if (av < bv) return asc ? -1 : 1;
             if (av > bv) return asc ? 1 : -1;
             return 0;
