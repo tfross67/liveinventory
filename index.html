@@ -185,9 +185,88 @@
     }
 
     .results-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 0.75rem;
+      display: block;
+    }
+
+    /* ── TABLE VIEW ─────────────────────────────────────── */
+    .inv-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      font-size: 0.88rem;
+    }
+    .inv-table thead {
+      background: var(--surface2);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    .inv-table th {
+      text-align: left;
+      padding: 0.6rem 0.8rem;
+      font-weight: 600;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .inv-table td {
+      padding: 0.55rem 0.8rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .inv-table tr:last-child td { border-bottom: none; }
+    .inv-table tr:hover td { background: var(--surface2); }
+    .inv-table .col-tab { width: 90px; }
+    .inv-table .col-date { width: 110px; color: var(--text-muted); font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.82rem; }
+    .inv-table .col-qty { width: 70px; text-align: right; font-weight: 700; color: var(--accent); font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+    .inv-table .col-size { width: 100px; color: var(--text-muted); }
+    .inv-table .qty-cell.low { color: var(--danger); }
+    .inv-table .row-liner td:first-child { border-left: 3px solid var(--liner's); }
+    .inv-table .row-4in td:first-child { border-left: 3px solid var(--4in); }
+    .inv-table .row-1gal td:first-child { border-left: 3px solid var(--1gal); }
+    .inv-table .plant-cell { color: var(--text); }
+
+    /* ── PAGINATION ─────────────────────────────────────── */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      margin-top: 1rem;
+      padding: 0.75rem;
+    }
+    .pagination button {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.45rem 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.15s;
+    }
+    .pagination button:hover:not(:disabled) {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .pagination button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    .pagination .page-info {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      padding: 0 0.6rem;
+    }
+    .pagination .page-range {
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      margin-left: 0.3rem;
     }
 
     /* ── CARD ───────────────────────────────────────────── */
@@ -465,8 +544,11 @@ function cardIcon(sheet) {
   return '🌿';
 }
 
+let currentPage = 1;
+const PAGE_SIZE = 50;
+
 function render() {
-  const rows = sortResults(getFiltered());
+  const allRows = sortResults(getFiltered());
   const grid = document.getElementById('results-grid');
   const empty = document.getElementById('empty-state');
   const totalEl = document.getElementById('results-count');
@@ -494,39 +576,63 @@ function render() {
     `<div class="stat"><span class="stat-dot ${k === 'Liner Inventory' ? 'liner' : k === 'Four Inch Production' ? '4in' : '1gal'}"></span>${tabLabels[k]}: <strong>${v.toLocaleString()}</strong> units</div>`
   ).join('') + `<div class="stat">📦 Total: <strong>${grandTotal.toLocaleString()}</strong> units</div>`;
 
-  totalEl.textContent = `${rows.length.toLocaleString()} records`;
+  totalEl.textContent = `${allRows.length.toLocaleString()} records`;
   filteredEl.textContent = searchQuery ? `filtered from ${Object.values(INVENTORY).reduce((a, s) => a + s.length, 0).toLocaleString()} total` : '';
 
-  if (rows.length === 0) {
+  if (allRows.length === 0) {
     grid.innerHTML = '';
     empty.style.display = 'block';
     return;
   }
   empty.style.display = 'none';
 
-  grid.innerHTML = rows.map(r => {
+  // Pagination
+  const totalPages = Math.ceil(allRows.length / PAGE_SIZE);
+  if (currentPage > totalPages) currentPage = totalPages;
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageRows = allRows.slice(start, start + PAGE_SIZE);
+
+  // Table view - much more compact for 850 rows
+  let html = `<table class="inv-table"><thead><tr>
+    <th class="col-tab">Tab</th>
+    <th class="col-plant">Plant</th>
+    <th class="col-date">Date</th>
+    <th class="col-qty">Qty</th>
+    <th class="col-size">Size</th>
+  </tr></thead><tbody>`;
+  for (const r of pageRows) {
     const abbrev = SHEETS[r._sheet] || 'liner';
     const qtyCls = qtyClass(r.quantity);
-    const notesHtml = r.notes ? `<div class="card-notes">${r.notes}</div>` : '';
+    html += `<tr class="row-${abbrev}">
+      <td><span class="card-badge badge-${abbrev}">${badgeLabel(r._sheet)}</span></td>
+      <td class="plant-cell">${r.plant}</td>
+      <td class="date-cell">${r.date || '—'}</td>
+      <td class="qty-cell ${qtyCls}">${r.quantity || '0'}</td>
+      <td class="size-cell">${r.size || ''}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
 
-    return `
-    <div class="card card-${abbrev}">
-      <div class="card-top">
-        <div class="card-name">${r.plant}</div>
-        <span class="card-badge badge-${abbrev}">${badgeLabel(r._sheet)}</span>
-      </div>
-      <div class="card-meta">
-        ${r.date ? `<span>📅 ${r.date}</span>` : ''}
-        ${r.size ? `<span>📐 ${r.size}</span>` : ''}
-        ${r.cuttings ? `<span>🌱 ${r.cuttings}</span>` : ''}
-      </div>
-      <div class="card-qty ${qtyCls}">
-        ${r.quantity ? parseInt(r.quantity).toLocaleString() + ' units' : '—'}
-      </div>
-      ${notesHtml}
-    </div>`;
-  }).join('');
+  // Pagination controls
+  html += `<div class="pagination">
+    <button onclick="gotoPage(1)" ${currentPage === 1 ? 'disabled' : ''}>« First</button>
+    <button onclick="gotoPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹ Prev</button>
+    <span class="page-info">Page <strong>${currentPage}</strong> of ${totalPages} <span class="page-range">(${start + 1}–${Math.min(start + PAGE_SIZE, allRows.length)} of ${allRows.length})</span></span>
+    <button onclick="gotoPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next ›</button>
+    <button onclick="gotoPage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>Last »</button>
+  </div>`;
+
+  grid.innerHTML = html;
 }
+
+function gotoPage(p) {
+  currentPage = p;
+  render();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Reset to page 1 when search/tab changes
+function resetPagination() { currentPage = 1; }
 
 // ── TAB SELECTION ─────────────────────────────────────────────────────
 function setTab(tab) {
