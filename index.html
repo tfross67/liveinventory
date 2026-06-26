@@ -1,559 +1,560 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Native Sons - Inventory Tracker</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Native Sons — Plant Availability</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f5f5;
-            padding: 20px;
-        }
+    :root {
+      --bg: #1a1a1a;
+      --surface: #242424;
+      --surface2: #2e2e2e;
+      --border: #383838;
+      --text: #e8e8e8;
+      --text-muted: #999;
+      --accent: #7cb342;
+      --accent-hover: #9ccc65;
+      --danger: #ef5350;
+      --liner's: #81c784;
+      --4in: #64b5f6;
+      --1gal: #ffb74d;
+    }
 
-        .container { max-width: 1400px; margin: 0 auto; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
 
-        h1 { color: #2d5016; margin-bottom: 5px; }
-        .subtitle { color: #666; margin-bottom: 20px; }
+    /* ── HEADER ─────────────────────────────────────────── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
 
-        .tabs {
-            display: flex;
-            gap: 5px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
 
-        .tab {
-            padding: 12px 24px;
-            background: white;
-            border: none;
-            border-radius: 8px 8px 0 0;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            color: #666;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
 
-        .tab:hover { background: #e8f4e8; }
-        .tab.active { background: #2d5016; color: white; }
-        .tab.active:hover { background: #3d6a1e; }
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
 
-        .tab-badge {
-            background: white;
-            color: #2d5016;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-        .tab.active .tab-badge { background: #4a7a24; color: white; }
+    .last-updated {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
 
-        .search-all-tab {
-            margin-left: auto;
-        }
+    /* ── SEARCH BAR ──────────────────────────────────────── */
+    .search-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
 
-        .filters {
-            background: white;
-            padding: 20px;
-            border-radius: 0 8px 8px 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 220px;
+    }
 
-        .filters-row {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
+    .search-wrap svg {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
 
-        input, select {
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-            outline: none;
-        }
+    #search-input {
+      width: 100%;
+      padding: 0.6rem 1rem 0.6rem 2.5rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
 
-        input[type="text"] { flex: 1; min-width: 250px; }
-        input[type="text"]:focus { border-color: #2d5016; }
-        input[type="number"] { width: 70px; }
+    #search-input:focus { border-color: var(--accent); }
+    #search-input::placeholder { color: var(--text-muted); }
 
+    /* ── FILTERS ────────────────────────────────────────── */
+    .filters {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
 
+    .filter-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-right: 0.25rem;
+    }
 
-        #resultsCount {
-            color: #888;
-            font-size: 13px;
-            margin-left: auto;
-            white-space: nowrap;
-        }
+    .pill {
+      padding: 0.3rem 0.75rem;
+      border-radius: 100px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text-muted);
+      transition: all 0.15s;
+      user-select: none;
+    }
 
-        .stats {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-        }
+    .pill:hover { border-color: var(--text-muted); color: var(--text); }
 
-        .stat { font-size: 13px; color: #666; }
-        .stat strong { color: #2d5016; }
+    .pill.active[data-tab="all"]       { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .pill.active[data-tab="Liner"]     { background: var(--liner's); border-color: var(--liner's); color: #1a1a1a; }
+    .pill.active[data-tab="Four Inch"] { background: var(--4in); border-color: var(--4in); color: #1a1a1a; }
+    .pill.active[data-tab="One Gallon"]{ background: var(--1gal); border-color: var(--1gal); color: #1a1a1a; }
 
-        .update-date {
-            color: #888;
-            font-size: 12px;
-            margin-bottom: 15px;
-        }
+    .sort-select {
+      padding: 0.3rem 0.6rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      color: var(--text);
+      font-size: 0.8rem;
+      outline: none;
+      cursor: pointer;
+    }
 
-        .contact {
-            background: #e8f4e8;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
+    /* ── STATS BAR ──────────────────────────────────────── */
+    .stats-bar {
+      max-width: 1400px;
+      margin: 0.75rem auto 0;
+      padding: 0 1.5rem;
+      display: flex;
+      gap: 1.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
 
-        .contact strong { color: #2d5016; }
+    .stat { display: flex; align-items: center; gap: 0.4rem; }
+    .stat-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .stat-dot.liner { background: var(--liner's); }
+    .stat-dot.4in { background: var(--4in); }
+    .stat-dot.1gal { background: var(--1gal); }
 
-        .results {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            overflow: hidden;
-            margin-bottom: 30px;
-        }
+    /* ── RESULTS ─────────────────────────────────────────── */
+    main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem 3rem;
+    }
 
-        table { width: 100%; border-collapse: collapse; }
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
 
-        th {
-            background: #2d5016;
-            color: white;
-            padding: 12px;
-            text-align: left;
-            cursor: pointer;
-            font-size: 13px;
-            user-select: none;
-            white-space: nowrap;
-            position: sticky;
-            top: 0;
-        }
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 0.75rem;
+    }
 
-        th:hover { background: #3d6a1e; }
-        th.sort-asc::after { content: ' ▲'; font-size: 10px; }
-        th.sort-desc::after { content: ' ▼'; font-size: 10px; }
+    /* ── CARD ───────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      transition: border-color 0.15s, transform 0.1s;
+      cursor: default;
+    }
 
-        td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #eee;
-            font-size: 13px;
-        }
+    .card:hover {
+      border-color: var(--text-muted);
+      transform: translateY(-1px);
+    }
 
-        tr:hover { background: #f9f9f9; }
-        tr:last-child td { border-bottom: none; }
+    .card-liner  { border-left: 3px solid var(--liner's); }
+    .card-4in    { border-left: 3px solid var(--4in); }
+    .card-1gal   { border-left: 3px solid var(--1gal); }
 
-        .qty { font-weight: 700; color: #2d5016; }
-        .qty.low { color: #c0392b; }
-        .no-results {
-            padding: 40px;
-            text-align: center;
-            color: #666;
-        }
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
 
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+    .card-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text);
+      flex: 1;
+    }
 
-        .retail {
-        #monthFilter option { color: #333; }
+    .card-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 100px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .filters-row { flex-direction: column; align-items: stretch; }
-            input[type="text"] { min-width: unset; }
-            th, td { padding: 8px 6px; font-size: 12px; }
-            .tab { padding: 10px 14px; font-size: 13px; }
-        }
-    </style>
+    .badge-liner  { background: rgba(129,199,132,0.2); color: var(--liner's); }
+    .badge-4in    { background: rgba(100,181,246,0.2); color: var(--4in); }
+    .badge-1gal   { background: rgba(255,183,77,0.2); color: var(--1gal); }
+
+    .card-meta {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .card-meta span { display: flex; align-items: center; gap: 0.3rem; }
+
+    .card-qty {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .card-qty.low { color: var(--danger); }
+
+    .card-notes {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-top: 0.2rem;
+    }
+
+    /* ── EMPTY STATE ────────────────────────────────────── */
+    .empty {
+      text-align: center;
+      padding: 4rem 1rem;
+      color: var(--text-muted);
+    }
+
+    .empty svg { margin-bottom: 1rem; opacity: 0.4; }
+    .empty h3 { font-size: 1.1rem; margin-bottom: 0.4rem; color: var(--text); }
+    .empty p { font-size: 0.9rem; }
+
+    /* ── COPY URL ───────────────────────────────────────── */
+    #copy-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.35rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    #copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+    #copy-btn.copied { border-color: var(--accent); color: var(--accent); }
+
+    /* ── RESPONSIVE ─────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .results-grid { grid-template-columns: 1fr; }
+      .header-inner { padding: 0; }
+    }
+  </style>
 </head>
 <body>
-<div class="container">
 
-    <h1>📦 Inventory Tracking</h1>
-    <p class="subtitle">Native Sons Wholesale Nursery — Internal Use Only</p>
-    <p class="update-date">Last updated: <span id="updateDate">2026 Season</span></p>
-
-    <div class="contact">
-        <strong>Internal Inventory System</strong>
+<header>
+  <div class="header-inner">
+    <div class="header-top">
+      <div class="logo">🌿 Native Sons — Plant Availability</div>
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <button id="copy-btn" onclick="copyShareUrl()">🔗 Share</button>
+        <span class="last-updated">2024 season</span>
+      </div>
     </div>
 
-    <div class="tabs">
-        <button class="tab active" id="tab-liners" onclick="switchTab('liners')">
-            Liners <span class="tab-badge" id="linersCount">0</span>
-        </button>
-        <button class="tab" id="tab-4inch" onclick="switchTab('4inch')">
-            4" Pots <span class="tab-badge" id="4inchCount">0</span>
-        </button>
-        <button class="tab" id="tab-1gallon" onclick="switchTab('1gallon')">
-            1 Gallon <span class="tab-badge" id="1gallonCount">0</span>
-        </button>
-        <button class="tab" id="tab-5gallon" onclick="switchTab('5gallon')">
-            5 Gallon <span class="tab-badge" id="5gallonCount">0</span>
-        </button>
-        <button class="tab search-all-tab" id="tab-all" onclick="switchTab('all')">
-            🔍 Search All <span class="tab-badge" id="allCount">0</span>
-        </button>
+    <div class="search-row">
+      <div class="search-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="search-input" type="text" placeholder="Search by plant name, size, or notes…" autofocus>
+      </div>
     </div>
 
     <div class="filters">
-        <div class="filters-row">
-            <input type="text" id="searchInput" placeholder="Search plant name..." oninput="filter()">
-            <select id="monthFilter" onchange="filter()">
-                <option value="">All Production Dates</option>
-            </select>
-            <span id="resultsCount" style="color: #888; font-size: 13px; margin-left: auto;"></span>
-        </div>
+      <span class="filter-label">Tab:</span>
+      <button class="pill active" data-tab="all"       onclick="setTab('all')">All</button>
+      <button class="pill"        data-tab="Liner Inventory"        onclick="setTab('Liner Inventory')">🌱 Liner</button>
+      <button class="pill"        data-tab="Four Inch Production"    onclick="setTab('Four Inch Production')">4″ Production</button>
+      <button class="pill"        data-tab="One Gallon Production"    onclick="setTab('One Gallon Production')">1 Gallon</button>
+
+      <span class="filter-label" style="margin-left:0.5rem;">Sort:</span>
+      <select class="sort-select" id="sort-select" onchange="render()">
+        <option value="name-asc">Name A→Z</option>
+        <option value="name-desc">Name Z→A</option>
+        <option value="qty-desc" selected>Qty: High→Low</option>
+        <option value="qty-asc">Qty: Low→High</option>
+        <option value="date-desc">Newest First</option>
+        <option value="date-asc">Oldest First</option>
+      </select>
     </div>
+  </div>
+</header>
 
-    <div class="stats">
-        <div class="stat"><strong id="totalPlants">0</strong> total plants</div>
-        <div class="stat">Showing <strong id="showingCount">0</strong></div>
-    </div>
+<div class="stats-bar" id="stats-bar"></div>
 
-    <!-- Liners Tab -->
-    <div id="liners" class="tab-content active">
-        <div class="results">
-            <table>
-                <thead>
-                    <tr>
-                        <th id="col-liners-name" onclick="sort('liners','name')">Plant Name</th>
-                        <th id="col-liners-date" onclick="sort('liners','date')">Production Date</th>
-                        <th id="col-liners-qty" onclick="sort('liners','qty')">Quantity</th>
-                        <th>Size</th>
-                        <th>Type</th>
-                        <th>Notes</th>
-                    </tr>
-                </thead>
-                <tbody id="linersBody"></tbody>
-            </table>
-        </div>
-    </div>
+<main>
+  <div class="results-header">
+    <span id="results-count"></span>
+    <span id="results-filtered"></span>
+  </div>
+  <div class="results-grid" id="results-grid"></div>
+  <div class="empty" id="empty-state" style="display:none;">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 6v4m0 4h.01"/></svg>
+    <h3>No plants found</h3>
+    <p>Try a different search or clear your filters.</p>
+  </div>
+</main>
 
-    <!-- 4" Pots Tab -->
-    <div id="4inch" class="tab-content">
-        <div class="results">
-            <table>
-                <thead>
-                    <tr>
-                        <th id="col-4inch-name" onclick="sort('4inch','name')">Plant Name</th>
-                        <th id="col-4inch-date" onclick="sort('4inch','date')">Production Date</th>
-                        <th id="col-4inch-qty" onclick="sort('4inch','qty')">Quantity</th>
-                        <th>Size</th>
-                        <th>Type</th>
-                        <th>Notes</th>
-                    </tr>
-                </thead>
-                <tbody id="4inchBody"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- 1 Gallon Tab -->
-    <div id="1gallon" class="tab-content">
-        <div class="results">
-            <table>
-                <thead>
-                    <tr>
-                        <th id="col-1gallon-name" onclick="sort('1gallon','name')">Plant Name</th>
-                        <th id="col-1gallon-date" onclick="sort('1gallon','date')">Production Date</th>
-                        <th id="col-1gallon-qty" onclick="sort('1gallon','qty')">Quantity</th>
-                        <th>Size</th>
-                        <th>Notes</th>
-                    </tr>
-                </thead>
-                <tbody id="1gallonBody"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- 5 Gallon Tab -->
-    <div id="5gallon" class="tab-content">
-        <div class="results">
-            <table>
-                <thead>
-                    <tr>
-                        <th id="col-5gallon-name" onclick="sort('5gallon','name')">Plant Name</th>
-                        <th id="col-5gallon-date" onclick="sort('5gallon','date')">Production Date</th>
-                        <th id="col-5gallon-qty" onclick="sort('5gallon','qty')">Quantity</th>
-                        <th>Size</th>
-                        <th>Notes</th>
-                    </tr>
-                </thead>
-                <tbody id="5gallonBody"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- All Tab -->
-    <div id="all" class="tab-content">
-        <div class="results">
-            <table>
-                <thead>
-                    <tr>
-                        <th id="col-all-name" onclick="sort('all','name')">Plant Name</th>
-                        <th id="col-all-size" onclick="sort('all','size')">Size</th>
-                        <th id="col-all-date" onclick="sort('all','date')">Date</th>
-                        <th id="col-all-qty" onclick="sort('all','qty')">Qty</th>
-                    </tr>
-                </thead>
-                <tbody id="allBody"></tbody>
-            </table>
-        </div>
-    </div>
-
-</div>
-
-<script src="inventory_data.js"></script>
 <script>
-    let currentTab = 'liners';
-    let filtered = { liners: [], '4inch': [], '1gallon': [], '5gallon': [] };
-    let sortCol = { liners: 'date', '4inch': 'date', '1gallon': 'date', '5gallon': 'date', all: 'name' };
-    let sortAsc = { liners: false, '4inch': false, '1gallon': false, '5gallon': false, all: true };
-    let monthFilter = '';
+// ── DATA (loaded from inventory_data.js) ──────────────────────────────
+const SHEETS = {
+  'Liner Inventory':       'Liner',
+  'Four Inch Production':  '4in',
+  'One Gallon Production': '1gal'
+};
 
-    // ── INIT ──────────────────────────────────────────────────────────
-    function init() {
-        buildMonthOptions();
-        applyFilter();
-        updateCounts();
-        document.getElementById('totalPlants').textContent =
-            Object.values(DATA).reduce((a, d) => a + d.length, 0);
-    }
+let currentTab = 'all';
+let searchQuery = '';
 
-    // ── MONTH FILTER ─────────────────────────────────────────────────
-    function buildMonthOptions() {
-        const months = {};
-        ['liners','4inch','1gallon','5gallon'].forEach(tab => {
-            DATA[tab].forEach(row => {
-                if (row.date) {
-                    const parts = row.date.split('/');
-                    if (parts.length === 3) {
-                        const key = `01/${parts[0]}/${parts[2]}`;
-                        const d = new Date(row.date);
-                        if (!isNaN(d)) {
-                            const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-                            months[key] = label;
-                        }
-                    }
-                }
-            });
-        });
-        const select = document.getElementById('monthFilter');
-        Object.keys(months).sort((a, b) => new Date(a) - new Date(b))
-            .forEach(key => {
-                const opt = document.createElement('option');
-                opt.value = months[key];
-                opt.textContent = months[key];
-                select.appendChild(opt);
-            });
-    }
+// ── URL STATE ──────────────────────────────────────────────────────────
+function syncToUrl() {
+  const params = new URLSearchParams();
+  if (currentTab !== 'all') params.set('tab', currentTab);
+  if (searchQuery) params.set('q', searchQuery);
+  const newUrl = params.toString() ? '?' + params.toString() : window.location.pathname;
+  history.replaceState(null, '', newUrl);
+}
 
-    // ── FILTER ────────────────────────────────────────────────────────
-    function applyFilter() {
-        const q = document.getElementById('searchInput').value.toLowerCase().trim();
-        const monthVal = document.getElementById('monthFilter').value;
+function loadFromUrl() {
+  const p = new URLSearchParams(window.location.search);
+  currentTab = p.get('tab') || 'all';
+  searchQuery = p.get('q') || '';
+  document.getElementById('search-input').value = searchQuery;
+  updatePillStyles();
+}
 
-        ['liners','4inch','1gallon','5gallon'].forEach(tab => {
-            filtered[tab] = DATA[tab].filter(row => {
-                if (q && !row.plant.toLowerCase().includes(q)) return false;
-                if (monthVal && !row.date) return false;
-                if (monthVal) {
-                    const d = new Date(row.date);
-                    if (!isNaN(d)) {
-                        const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-                        if (label !== monthVal) return false;
-                    }
-                }
-                return true;
-            });
-        });
+function copyShareUrl() {
+  syncToUrl();
+  navigator.clipboard.writeText(window.location.href).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '🔗 Share'; btn.classList.remove('copied'); }, 2000);
+  });
+}
 
-        // Build combined 'all' tab from filtered individual tabs
-        filtered.all = ['liners','4inch','1gallon','5gallon'].flatMap(t =>
-            filtered[t].map(r => ({...r, _tab: t}))
-        );
+// ── FILTERING ─────────────────────────────────────────────────────────
+function getFiltered() {
+  const q = searchQuery.toLowerCase().trim();
+  let results = [];
 
-        applySort(currentTab);
-        render();
-    }
+  const tabs = currentTab === 'all'
+    ? Object.keys(INVENTORY)
+    : [currentTab];
 
-    function filter() { applyFilter(); }
-
-    // ── SORT ─────────────────────────────────────────────────────────
-    function sort(tab, col) {
-        if (sortCol[tab] === col) {
-            sortAsc[tab] = !sortAsc[tab];
-        } else {
-            sortCol[tab] = col;
-            sortAsc[tab] = col === 'name' || col === 'size';
+  for (const sheetName of tabs) {
+    for (const row of INVENTORY[sheetName]) {
+      if (!q) {
+        results.push({ ...row, _sheet: sheetName });
+      } else {
+        const haystack = [row.plant, row.size, row.notes, row.cuttings, row.date]
+          .join(' ').toLowerCase();
+        if (haystack.includes(q)) {
+          results.push({ ...row, _sheet: sheetName });
         }
-        applySort(tab);
-        render();
+      }
     }
+  }
 
-    function applySort(tab) {
-        const col = sortCol[tab];
-        const asc = sortAsc[tab];
-        const rows = filtered[tab];
+  return results;
+}
 
-        rows.sort((a, b) => {
-            let av = a[col] || '';
-            let bv = b[col] || '';
-            if (col === 'qty') { av = parseInt(av) || 0; bv = parseInt(bv) || 0; }
-            if (col === 'date') {
-                const parse = s => {
-                    if (!s) return 0;
-                    const [m, d, y] = s.split('/').map(Number);
-                    return (2000 + y) * 10000 + m * 100 + d;  // YYYYMMDD integer
-                };
-                av = parse(av); bv = parse(bv);
-            }
-            if (av < bv) return asc ? -1 : 1;
-            if (av > bv) return asc ? 1 : -1;
-            return 0;
-        });
+// ── SORTING ────────────────────────────────────────────────────────────
+function sortResults(rows) {
+  const sortBy = document.getElementById('sort-select').value;
+  const [field, dir] = sortBy.split('-');
+
+  rows.sort((a, b) => {
+    let av, bv;
+    if (field === 'name') {
+      av = a.plant.toLowerCase();
+      bv = b.plant.toLowerCase();
+      return dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
     }
-
-    // ── RENDER ───────────────────────────────────────────────────────
-    function fmt(n) {
-        if (!n || n === '0') return '—';
-        return parseInt(n).toLocaleString();
+    if (field === 'qty') {
+      av = parseInt(a.quantity) || 0;
+      bv = parseInt(b.quantity) || 0;
+      return dir === 'asc' ? av - bv : bv - av;
     }
-
-    function qtyClass(qty) {
-        const n = parseInt(qty);
-        if (!n || n === 0) return 'low';
-        if (n < 50) return 'low';
-        return '';
+    if (field === 'date') {
+      av = a.date || '';
+      bv = b.date || '';
+      return dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
     }
+    return 0;
+  });
 
-    function tabLabel(tab) {
-        const labels = { liners: 'Liners', '4inch': '4"', '1gallon': '1 Gal', '5gallon': '5 Gal' };
-        return labels[tab] || tab;
+  return rows;
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────
+function qtyClass(qty) {
+  const n = parseInt(qty);
+  if (!n || n === 0) return 'low';
+  if (n < 50) return 'low';
+  return '';
+}
+
+function badgeLabel(sheet) {
+  if (sheet === 'Liner Inventory') return '🌱 Liner';
+  if (sheet === 'Four Inch Production') return '4″ Prod';
+  if (sheet === 'One Gallon Production') return '1 Gallon';
+  return sheet;
+}
+
+function cardIcon(sheet) {
+  if (sheet === 'Liner Inventory') return '🌱';
+  if (sheet === 'Four Inch Production') return '🪴';
+  if (sheet === 'One Gallon Production') return '🫒';
+  return '🌿';
+}
+
+function render() {
+  const rows = sortResults(getFiltered());
+  const grid = document.getElementById('results-grid');
+  const empty = document.getElementById('empty-state');
+  const totalEl = document.getElementById('results-count');
+  const filteredEl = document.getElementById('results-filtered');
+
+  // Stats
+  const byTab = {};
+  let grandTotal = 0;
+  for (const sheetName of Object.keys(INVENTORY)) {
+    let sheetTotal = 0;
+    for (const r of INVENTORY[sheetName]) {
+      const n = parseInt(r.quantity);
+      if (!isNaN(n) && n > 0) { sheetTotal += n; grandTotal += n; }
     }
+    byTab[sheetName] = sheetTotal;
+  }
 
-    function renderRow(row, tab) {
-        const qty = fmt(row.qty);
-        const qtyCls = qtyClass(row.qty);
+  const statBar = document.getElementById('stats-bar');
+  const tabLabels = {
+    'Liner Inventory': '🌱 Liner',
+    'Four Inch Production': '🪴 4″',
+    'One Gallon Production': '🫒 1 Gal'
+  };
+  statBar.innerHTML = Object.entries(byTab).map(([k, v]) =>
+    `<div class="stat"><span class="stat-dot ${k === 'Liner Inventory' ? 'liner' : k === 'Four Inch Production' ? '4in' : '1gal'}"></span>${tabLabels[k]}: <strong>${v.toLocaleString()}</strong> units</div>`
+  ).join('') + `<div class="stat">📦 Total: <strong>${grandTotal.toLocaleString()}</strong> units</div>`;
 
-        if (tab === 'liners' || tab === '4inch') {
-            return `<tr>
-                <td>${row.plant}</td>
-                <td>${row.date}</td>
-                <td class="qty ${qtyCls}">${qty}</td>
-                <td>${row.size}</td>
-                <td>${row.cuttings}</td>
-                <td>${row.notes}</td>
-            </tr>`;
-        }
+  totalEl.textContent = `${rows.length.toLocaleString()} records`;
+  filteredEl.textContent = searchQuery ? `filtered from ${Object.values(INVENTORY).reduce((a, s) => a + s.length, 0).toLocaleString()} total` : '';
 
-        if (tab === '1gallon') {
-            return `<tr>
-                <td>${row.plant}</td>
-                <td>${row.date}</td>
-                <td class="qty ${qtyCls}">${qty}</td>
-                <td>${row.size}</td>
-                <td>${row.notes}</td>
-            </tr>`;
-        }
+  if (rows.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
 
-        if (tab === '5gallon') {
-            return `<tr>
-                <td>${row.plant}</td>
-                <td>${row.date}</td>
-                <td class="qty ${qtyCls}">${qty}</td>
-                <td>${row.size}</td>
-                <td>${row.notes}</td>
-            </tr>`;
-        }
+  grid.innerHTML = rows.map(r => {
+    const abbrev = SHEETS[r._sheet] || 'liner';
+    const qtyCls = qtyClass(r.quantity);
+    const notesHtml = r.notes ? `<div class="card-notes">${r.notes}</div>` : '';
 
-        if (tab === 'all') {
-            return `<tr>
-                <td>${row.plant}</td>
-                <td>${tabLabel(row._tab)}</td>
-                <td>${row.date}</td>
-                <td class="qty ${qtyCls}">${qty}</td>
-            </tr>`;
-        }
+    return `
+    <div class="card card-${abbrev}">
+      <div class="card-top">
+        <div class="card-name">${r.plant}</div>
+        <span class="card-badge badge-${abbrev}">${badgeLabel(r._sheet)}</span>
+      </div>
+      <div class="card-meta">
+        ${r.date ? `<span>📅 ${r.date}</span>` : ''}
+        ${r.size ? `<span>📐 ${r.size}</span>` : ''}
+        ${r.cuttings ? `<span>🌱 ${r.cuttings}</span>` : ''}
+      </div>
+      <div class="card-qty ${qtyCls}">
+        ${r.quantity ? parseInt(r.quantity).toLocaleString() + ' units' : '—'}
+      </div>
+      ${notesHtml}
+    </div>`;
+  }).join('');
+}
 
-        return '';
-    }
+// ── TAB SELECTION ─────────────────────────────────────────────────────
+function setTab(tab) {
+  currentTab = tab;
+  updatePillStyles();
+  syncToUrl();
+  render();
+}
 
-    function render() {
-        const rows = filtered[currentTab];
-        const tbody = document.getElementById(currentTab === '4inch' ? '4inchBody'
-            : currentTab === '1gallon' ? '1gallonBody'
-            : currentTab === '5gallon' ? '5gallonBody'
-            : currentTab === 'all' ? 'allBody'
-            : 'linersBody');
+function updatePillStyles() {
+  document.querySelectorAll('.pill[data-tab]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === currentTab);
+  });
+}
 
-        tbody.innerHTML = rows.length
-            ? rows.map(r => renderRow(r, currentTab)).join('')
-            : '<tr><td colspan="10" class="no-results">No plants found</td></tr>';
+// ── SEARCH ─────────────────────────────────────────────────────────────
+let searchTimeout;
+document.getElementById('search-input').addEventListener('input', () => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    searchQuery = document.getElementById('search-input').value;
+    syncToUrl();
+    render();
+  }, 200);
+});
 
-        const total = Object.values(filtered).reduce((a, d) => a + d.length, 0);
-        document.getElementById('showingCount').textContent = rows.length;
-        document.getElementById('resultsCount').textContent =
-            `${rows.length} of ${total} records`;
-
-        updateSortHeaders();
-    }
-
-    function updateSortHeaders() {
-        ['liners','4inch','1gallon','5gallon','all'].forEach(tab => {
-            ['name','date','qty','size'].forEach(col => {
-                const el = document.getElementById(`col-${tab}-${col}`);
-                if (!el) return;
-                el.classList.remove('sort-asc','sort-desc');
-                if (sortCol[tab] === col) {
-                    el.classList.add(sortAsc[tab] ? 'sort-asc' : 'sort-desc');
-                }
-            });
-        });
-    }
-
-    // ── TAB SWITCHING ────────────────────────────────────────────────
-    function switchTab(tab) {
-        currentTab = tab;
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.getElementById(`tab-${tab}`).classList.add('active');
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.getElementById(tab).classList.add('active');
-        applySort(tab);
-        render();
-    }
-
-    // ── COUNTS ───────────────────────────────────────────────────────
-    function updateCounts() {
-        ['liners','4inch','1gallon','5gallon','all'].forEach(tab => {
-            const total = tab === 'all'
-                ? Object.values(filtered).reduce((a, d) => a + d.length, 0)
-                : filtered[tab].length;
-            document.getElementById(`${tab}Count`).textContent = total;
-        });
-    }
-
-    // Override render to also update counts
-    const _render = render;
-    render = function() {
-        _render();
-        updateCounts();
-    };
-
-    init();
+// ── INIT ───────────────────────────────────────────────────────────────
+loadFromUrl();
+render();
 </script>
 </body>
 </html>
