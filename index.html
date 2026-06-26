@@ -69,10 +69,6 @@
                 <select id="monthFilter" onchange="filter()">
                     <option value="">All Production Dates</option>
                 </select>
-                <label style="display: flex; align-items: center; gap: 5px;">
-                    Retail Markup:
-                    <input type="number" id="markupInput" value="50" min="0" max="200" style="width: 70px;" onchange="filter()">%
-                </label>
                 <span id="resultsCount" style="color: #888; font-size: 13px; margin-left: auto;"></span>
             </div>
         </div>
@@ -130,8 +126,6 @@
                             <th onclick="sort('1gallon', 'date')">Production Date</th>
                             <th onclick="sort('1gallon', 'qty')">Quantity</th>
                             <th>Size</th>
-                            <th>Wholesale</th>
-                            <th>Retail</th>
                             <th>Notes</th>
                         </tr>
                     </thead>
@@ -150,8 +144,6 @@
                             <th onclick="sort('5gallon', 'date')">Production Date</th>
                             <th onclick="sort('5gallon', 'qty')">Quantity</th>
                             <th>Size</th>
-                            <th>Wholesale</th>
-                            <th>Retail</th>
                             <th>Notes</th>
                         </tr>
                     </thead>
@@ -286,19 +278,8 @@
         }
         
         function filter() { render(); }
-        
-        function getRetailPrice(wholesale) {
-            if (!wholesale || wholesale === '') return '-';
-            const markup = parseFloat(document.getElementById('markupInput').value) || 0;
-            const retail = wholesale * (1 + markup / 100);
-            return '$' + retail.toFixed(2);
-        }
-        
-        function getMarkupPercent() {
-            return parseFloat(document.getElementById('markupInput').value) || 0;
-        }
-        
-        function sort(tab, col) {
+
+function sort(tab, col) {
             if (sortCol[tab] === col) sortAsc[tab] = !sortAsc[tab];
             else { 
                 sortCol[tab] = col; 
@@ -378,23 +359,12 @@
                                 p.cuttings.toUpperCase().includes('SEED') ? 'Seed' : '-';
                     
                     // Get pricing for 1gallon and 5gallon tabs
-                    let wholesaleCol = '<td>-</td>';
-                    let retailCol = '<td>-</td>';
-                    if (tab === '1gallon' || tab === '5gallon') {
-                        const prices = getPlantPrice(p.name);
-                        const wsPrice = tab === '1gallon' ? prices.price1gal : prices.price5gal;
-                        const markup = parseFloat(document.getElementById('markupInput').value) || 0;
-                        const retailPrice = wsPrice ? (parseFloat(wsPrice) * (1 + markup/100)).toFixed(2) : '-';
-                        wholesaleCol = `<td>${wsPrice ? '$' + parseFloat(wsPrice).toFixed(2) : '-'}</td>`;
-                        retailCol = `<td style="color: #2d5016; font-weight: bold;">${retailPrice !== '-' ? '$' + retailPrice : '-'}</td>`;
-                    }
-                    
                     html += `<tr>
                         <td><strong>${p.name}</strong></td>
                         <td>${p.date}</td>
                         <td class="qty">${p.qty.toLocaleString()}</td>
                         <td>${p.size}</td>
-                        ${tab === '1gallon' || tab === '5gallon' ? wholesaleCol + retailCol : '<td>' + type + '</td>'}
+                        ${'<td>' + type + '</td>'}
                         <td>${p.notes}</td>
                     </tr>`;
                 });
