@@ -231,7 +231,7 @@
                 const cols = line.split(',');
                 if (cols[0] === 'PLANT NAME') { inData = true; continue; }
                 if (!inData) continue;
-                const name = cols[0]?.trim().replace(/^"/).replace(/"$/g);
+                const name = cols[0]?.trim().replace(/^"/, '').replace(/"$/g, '');
                 if (!name) continue;
                 
                 const date = cols[1]?.trim() || '';
