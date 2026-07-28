@@ -3,65 +3,73 @@
 ,,,,
 5 GALLON INVENTORY,,,,,
 PLANT NAME,PRODUCTION DATE,QUANTITY,SIZE,CUTTINGS / SEED,NOTES
-Westringia 'Naringa',6/9/2026,100,5g,,
-Ceanothus 'Far Horizon',6/9/2026,100,5g,,
-Fremontodendron 'Cal Glory',6/8/2026,200,5g,,
-Melianthus major,6/8/2026,100,5g,,
-Ceanothus 'Yankee Pt,6/5/2026,100,5g,,
-Fremontodendron 'Pacific Sunset',6/5/2026,200,5g,,
-Carpinteria californica 'Elizabeth',6/4/2026,200,5g,,
-Salvia apiana,6/4/2026,100,5g,,
-Phormium 'Black Adder',6/3/2026,200,5g,,
-Phlomis purpurea,6/3/2026,100,5g,,
-Lavandula 'Sweet Petite',6/2/2026,100,5g,,
-Prostanthera 'Variegata',6/2/2026,100,5g,,
-Acacia 'Cousin Itt',6/1/2026,200,5g,,
-Pittosporum 'Jade',6/1/2026,100,5g,,
-Teucrium fruticans 'Compacta',5/22/2026,100,5g,,
-Polygala myrtifolia 'Portola',5/22/2026,50,5g,,
-Convolvulus cneorum 'Snow Angel',5/21/2026,200,5g,,
-Cassia artemisioides,5/21/2026,100,5g,,
-Lyonothamnus floribundus ssp. Asplenifolius,5/20/2026,200,5g,,
-Pittosporum 'Wrinkle Blue',5/20/2026,200,5g,,
-Lavandula canariensis,5/19/2026,100,5g,,
-Olea 'Skylark Dwarf',5/19/2026,150,5g,,
-Buddleja 'Monarch Princess Pink',5/18/2026,100,5g,,
-Abelia x grandiflora 'Kaleidoscope',5/18/2026,100,5g,,
-Phlomis lanata,5/15/2026,100,5g,,
-Acacia covenyi,5/11/2026,100,5g,,
-Ceanothus griseus,5/11/2026,100,5g,,
-Westringia 'Small Ball',5/8/2026,100,5g,,
-Pittosporum 'Marjorie Channon',5/8/2026,200,5g,,
-Lomandra 'Lime Tough',5/4/2026,200,5g,,
-Westringia 'Naringa',5/4/2026,100,5g,,
-Arctostaphylos 'St Helena',5/1/2026,200,5g,,
-Arctostaphylos 'Sebastopol White',5/1/2026,100,5g,,
-Lavandula 'Double Anouk',4/27/2026,200,5g,,
-Teucrium fruticans 'Azureum',4/27/2026,100,5g,,
-Phlomis fruticosa,4/27/2026,100,5g,,
-Lavandula 'Anouk Supreme',4/24/2026,200,5g,,
-Lavandula 'Grosso',4/23/2026,200,5g,,
-Lavandula 'Provence',4/23/2026,200,5g,,
-Rosmarinus 'Boule',4/20/2026,100,5g,,
-Rosmarinus 'Tuscan Blue',4/20/2026,100,5g,,
-Pittosporum 'Oliver Twist',2/5/2026,50,15g,,
-Myrica californica,2/5/2026,25,15g,,
-Lavandula 'Primavera',2/2/2026,200,5g,,
-Parahebe perfoliata,2/2/2026,100,5g,,
-Lavandula 'Double Anouk',1/29/2026,100,5g,,
-Teucrium fruticans 'Azureum',1/26/2026,100,5g,,
-Polygala 'Mariposa',1/23/2026,200,5g,,
-Rosmarinus 'Barbeque',1/22/2026,100,5g,,
-Lavandula 'Goodwin Creek Grey',1/20/2026,100,5g,,
-Ceanothus 'King Sip',1/19/2026,100,5g,,
-Penstemon 'Sour  Grapes',1/19/2026,100,5g,,
-Cistus 'Blanche',1/16/2026,100,5g,,
-Cistus 'Victor Reiter',1/16/2026,100,5g,,
-Carpinteria californica 'Elizabeth',1/15/2026,200,5g,,
-Olea 'Skylark Dwarf',1/15/2026,200,5g,,
-Quercus suber,1/14/2026,100,5g,,
-Pittosporum 'Jade',1/14/2026,200,5g,,
-Arctostaphylos 'Canyon Blush',1/13/2026,100,5g,,
-Arctostaphylos 'Sebastopol White',1/13/2026,200,5g,,
-Romneya coulteri,1/12/2026,200,5g,,
-Ribes Tranquilon Ridge',1/12/2026,100,5g,,
+"Romneya coulteri",1/12/2026,200,5g,,"
+"Ribes Tranquilon Ridge'",1/12/2026,100,5g,,"
+"Arctostaphylos 'Canyon Blush'",1/13/2026,100,5g,,"
+"Arctostaphylos 'Sebastopol White'",1/13/2026,200,5g,,"
+"Quercus suber",1/14/2026,100,5g,,"
+"Pittosporum 'Jade'",1/14/2026,200,5g,,"
+"Carpinteria califoornica 'Elizabeth'",1/15/2026,200,5g,,"
+"Olea 'Skylark Dwarf'",1/15/2026,200,5g,,"
+"Cistus 'Blanche'",1/16/2026,100,5g,,"
+"Cistus 'Victor Reiter'",1/16/2026,100,5g,,"
+"Ceanothus 'King Sip'",1/19/2026,100,5g,,"
+"Penstemon 'Sour  Grapes'",1/19/2026,100,5g,,"
+"Lavandula 'Goodwin Creek Grey'",1/20/2026,100,5g,,"
+"Rosmarinus 'Barbeque'",1/22/2026,100,5g,,"
+"Polygala 'Mariposa'",1/23/2026,200,5g,,"
+"Teucrium fruticans 'Azureum'",1/26/2026,100,5g,,"
+"Lavandula 'Double Anouk'",1/29/2026,100,5g,,"
+"Lavandula 'Primavera'",2/2/2026,200,5g,,"
+"Parahebe perfoliata",2/2/2026,100,5g,,"
+"Rosmarinus 'Boule'",4/20/2026,100,5g,,"
+"Rosmarinus 'Tuscan Blue'",4/20/2026,100,5g,,"
+"Lavandula 'Grosso'",4/23/2026,200,5g,,"
+"Lavandula 'Provence'",4/23/2026,200,5g,,"
+"Lavandula 'Double Anouk'",4/27/2026,200,5g,,"
+"Lavandula 'Anouk Supreme'",4/24/2026,200,5g,,"
+"Teucrium fruticans 'Azureum'",4/27/2026,100,5g,,"
+"Phlomis fruticosa",4/27/2026,100,5g,,"
+"Arctostaphylos 'St Helena'",5/1/2026,200,5g,,"
+"Arctostaphylos 'Sebastopol White'",5/1/2026,100,5g,,"
+"Lomandra 'Lime Tough'",5/4/2026,200,5g,,"
+"Westringia 'Naringa'",5/4/2026,100,5g,,"
+"Westringia 'Small Ball'",5/8/2026,100,5g,,"
+"Pittosporum 'Marjorie Channon'",5/8/2026,200,5g,,"
+"Acacia covenyi",5/11/2026,100,5g,,"
+"Ceanothus griseus",5/11/2026,100,5g,,"
+"Phlomis lanata",5/15/2026,100,5g,,"
+"Buddleja Monarch Princess Pink'",5/18/2026,100,5g,,"
+"Abelia x grandiflora 'Kaleidoscope'",5/18/2026,100,5g,,"
+"Lavandula canariensis",5/19/2026,100,5g,,"
+"Olea 'Skylark Dwarf'",5/19/2026,150,5g,,"
+"Lyonothamnus floribundus ssp. Asplenifolius",5/20/2026,200,5g,,"
+"Pittosporum 'Wrinkle Blue'",5/20/2026,200,5g,,"
+"Convolvulus cneorum 'Snow Angel'",5/21/2026,200,5g,,"
+"Cassia artemisioides",5/21/2026,100,5g,,"
+"Teucrium fruticans 'Compacta'",5/22/2026,100,5g,,"
+"Polygala myrtifolia ''Portola'",5/22/2026,50,5g,,"
+"Acacia 'Cousin Itt'",6/14/2026,200,5g,,"
+"Westringia 'Mundi'",6/14/2026,100,5g,,"
+"Lavandula 'Jennifer'",6/16/2026,100,5g,,"
+"Lavandula 'Sweet Petite'",6/16/2026,100,5g,,"
+"Lavandula 'Annet'",6/18/2026,200,5g,,"
+"Fuchsia 'Versicolor'",6/18/2026,100,5g,,"
+"Erica verticillata",6/21/2026,200,5g,,"
+"Penstemon 'Cathedral Pink'",6/21/2026,100,5g,,"
+"Pittosporum 'Marjorie Channon'",6/23/2026,200,5g,,"
+"Lavandula 'Primavera'",6/23/2026,200,5g,,"
+"Salvia 'Hot Lips'",6/25/2026,100,5g,,"
+"Coleonema pul. 'Red'",6/25/2026,100,5g,,"
+"Adenanthus 'Coral Drift'",6/28/2026,100,5g,,"
+"Pittosporum crass. 'Compacta",6/28/2026,100,5g,,"
+"Ribes 'Cal Flora White'",7/1/2026,100,5g,,"
+"Romneya  coulteri",7/1/2026,100,5g,,"
+"Rhus integrifolia",7/2/2026,100,5g,,"
+"Salvia clevelandii 'Winnifred Gilman'",7/2/2026,100,5g,,"
+"Cenaothus 'Snow Flurry'",7/3/2026,100,5g,,"
+"Rhamnus 'Mound San Bruno'",7/3/2026,100,5g,,"
+"Leucadendron 'Pisa'",7/7/2026,100,5g,,"
+"Ceanothus 'Marie Rose'",7/7/2026,100,5g,,"
+"Ceanothus 'Autumnal Blue'",7/8/2026,100,5g,,"
+"Olea 'Skylark Dwarf'",7/8/2026,100,5g,,"
