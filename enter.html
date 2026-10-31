@@ -36,7 +36,7 @@
         .ac-item:last-child { border-bottom: none; }
         .ac-item:hover, .ac-item.active { background: #e8f4e8; }
         .ac-item .code { color: #888; font-size: 12px; font-family: ui-monospace, Menlo, monospace; margin-left: 6px; }
-        .ac-item .size { background: #2d5016; color: white; font-size: 11px; padding: 1px 6px; border-radius: 10px; margin-left: 6px; }
+        .ac-item .size { background: #2d5016; color: white; font-size: 11px; padding: 1px 6px; border-radius: 10px; margin-left: 6px; white-space: nowrap; }
         .ac-item .free { color: #8a6d1f; }
         .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
         .chip { background: #e8f4e8; color: #2d5016; border: 1px solid #cfe2c9; border-radius: 20px; padding: 3px 9px; font-size: 12px; }
@@ -59,7 +59,17 @@
             .span-2 { grid-column: span 1; }
             th, td { padding: 8px 6px; font-size: 12px; }
             .hide-sm { display: none; }
-            .ac-item { padding: 13px 12px; }
+            .btn { padding: 13px 18px; }
+            .btn-ghost { padding: 10px 8px; }
+            /* long botanical names push the size chip onto a wrapped line and
+               split it mid-word ("1 / Gallon"); give the name its own line */
+            .ac-item {
+                display: grid; grid-template-columns: 1fr auto; align-items: center;
+                column-gap: 8px; row-gap: 4px; padding: 11px 12px;
+            }
+            .ac-item strong { grid-column: 1 / -1; }
+            .ac-item .size { grid-column: 1; justify-self: start; margin-left: 0; }
+            .ac-item .code { grid-column: 2; justify-self: end; margin-left: 0; }
         }
     </style>
 </head>
