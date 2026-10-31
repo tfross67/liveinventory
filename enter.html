@@ -107,6 +107,22 @@
         <div id="banner" class="banner"></div>
 
         <div class="card">
+            <h2>Paste a weekly list</h2>
+            <p class="hint" style="margin-top:-6px; margin-bottom:10px;">
+                Paste the same text you keep in Pages — size headings, the week, and
+                <strong>quantity then plant name</strong> on each line. Names are matched to the
+                plant database and shown for review before anything is saved.
+            </p>
+            <textarea id="pasteInput" rows="6" spellcheck="false"
+                placeholder="1 Gallon&#10;&#10;Week of October 12th, 2026&#10;&#10;500 Lavandula 'Anouk Supreme'&#10;500 Phlomis purpurea&#10;&#10;Total: 1,000&#10;&#10;For 4 inch this week:&#10;&#10;892 Phyla nodiflora (white)"></textarea>
+            <div class="row" style="margin-top:12px;">
+                <button class="btn" onclick="reviewPaste()">Parse &amp; review</button>
+                <button class="btn btn-secondary" onclick="clearPaste()">Clear</button>
+            </div>
+            <div id="pasteReview"></div>
+        </div>
+
+        <div class="card">
             <h2>Add a production row</h2>
             <div class="grid">
                 <div class="span-2 ac-wrap">
@@ -552,6 +568,260 @@ async function loadRecent() {
     } catch (e) {
         document.getElementById('recentBody').innerHTML = `<tr><td colspan="5" class="empty">${escapeHtml(e.message)}</td></tr>`;
     }
+}
+
+// ---------- paste-a-list import ----------
+// Mirrors scripts/import_pages_list.py: same rules, same order of attempts.
+// If you change the matching here, change it there too (and vice versa).
+
+const ALIASES = { thyme: 'thymus', lavender: 'lavandula', rosemary: 'rosmarinus', sage: 'salvia' };
+const CATALOG_SIZE_FOR_TAB = { '4inch': '4inch', '1gallon': '1gal', '5gallon': '5gal', liners: null };
+const TAB_ROW_SIZE = { '4inch': '4" 16 Tray', '1gallon': '1 gallon', '5gallon': '5g', liners: '' };
+const TAB_SIZE_HEADING = { 1: '1gallon', 4: '4inch', 5: '5gallon' };
+
+
+function normName(s) {
+    return String(s)
+        .replace(/[\u2018\u2019]/g, "'")
+        .replace(/[\u201c\u201d]/g, '"')
+        .toLowerCase()
+        .replace(/\s*\((new|patented|ppaf|pp\d+[^)]*)\)\s*/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/^[ .,]+|[ .,]+$/g, '');
+}
+
+function balanceQuotes(s) {
+    const t = String(s).replace(/[\u2018\u2019]/g, "'");
+    return t.split("'").length % 2 === 0 ? t : t + "'";
+}
+
+function cultivarOf(s) {
+    const m = String(s).match(/'(.+)'/);
+    return m ? normName(m[1]) : null;
+}
+
+function genusOf(s) {
+    const g = normName(s).split(' ')[0];
+    return ALIASES[g] || g;
+}
+
+let NAME_INDEX = null;
+function nameIndex() {
+    if (NAME_INDEX) return NAME_INDEX;
+    const byName = new Map();
+    for (const p of (window.PLANT_CATALOG || [])) {
+        const n = normName(p.n);
+        if (!byName.has(n)) {
+            byName.set(n, { n: p.n, i: p.i.map(x => x.slice()) });
+        } else {
+            const t = byName.get(n);
+            for (const [size, code] of p.i) {
+                if (!t.i.some(q => q[0] === size && q[1] === code)) t.i.push([size, code]);
+            }
+        }
+    }
+    const byGenus = new Map();
+    for (const p of byName.values()) {
+        const g = genusOf(p.n);
+        if (!byGenus.has(g)) byGenus.set(g, []);
+        byGenus.get(g).push(p);
+    }
+    NAME_INDEX = { byName, byGenus };
+    return NAME_INDEX;
+}
+
+function matchPlant(name, tab) {
+    const { byName, byGenus } = nameIndex();
+    const target = normName(balanceQuotes(name));
+    if (byName.has(target)) return { plant: byName.get(target), how: 'exact' };
+
+    const want = CATALOG_SIZE_FOR_TAB[tab];
+    const hasSize = p => !want || p.i.some(([s]) => s === want);
+    const candidates = byGenus.get(genusOf(target)) || [];
+    const cultivar = cultivarOf(target);
+
+    if (cultivar) {
+        let hits = candidates.filter(p => cultivarOf(normName(p.n)) === cultivar);
+        let pool = hits.filter(hasSize);
+        if (!pool.length) pool = hits;
+        if (pool.length === 1) return { plant: pool[0], how: 'cultivar' };
+        if (pool.length > 1) {
+            const toks = new Set(target.split(' '));
+            const scored = pool
+                .map(p => [Array.from(toks).filter(t => normName(p.n).split(' ').includes(t)).length, p])
+                .sort((a, b) => b[0] - a[0]);
+            if (scored[0][0] > scored[1][0]) return { plant: scored[0][1], how: 'cultivar+similarity' };
+            return { error: `ambiguous cultivar (${pool.length} matches)` };
+        }
+    }
+
+    const toks = target.replace(/'/g, ' ').split(' ').filter(t => t && t !== 'x' && t !== 'var.');
+    let contained = candidates.filter(p => {
+        const hay = normName(p.n).replace(/'/g, ' ');
+        return toks.every(t => hay.includes(t));
+    });
+    if (contained.length) {
+        const sized = contained.filter(hasSize);
+        const pool = sized.length ? sized : contained;
+        if (pool.length === 1) return { plant: pool[0], how: 'all words contained' };
+    }
+
+    const pref = candidates.filter(p => normName(p.n).startsWith(target));
+    if (pref.length === 1) return { plant: pref[0], how: 'prefix' };
+    if (pref.length > 1) {
+        const sized = pref.filter(hasSize);
+        if (sized.length === 1) return { plant: sized[0], how: 'prefix+size' };
+        return { error: `ambiguous prefix (${pref.length} matches)` };
+    }
+
+    const tokset = new Set(target.split(' '));
+    const near = candidates
+        .map(p => {
+            const pt = new Set(normName(p.n).split(' '));
+            let n = 0;
+            tokset.forEach(t => { if (pt.has(t)) n++; });
+            return [n / Math.max(tokset.size, 1), p];
+        })
+        .filter(([s]) => s >= 0.6)
+        .sort((a, b) => b[0] - a[0]);
+    if (near.length === 1) return { plant: near[0][1], how: 'similar' };
+    if (near.length > 1 && near[0][0] > near[1][0]) return { plant: near[0][1], how: 'similar' };
+
+    return { error: 'no catalog match' };
+}
+
+function headingTabOf(line) {
+    const m = line.match(/^(?:For\s+)?(\d+)\s*(?:"|inch\b|in\b|gallon\b|gal\b)(.*)$/i);
+    if (!m) return null;
+    const rest = m[2].replace(/^[\s:.]+|[\s:.]+$/g, '');
+    if (/^for /i.test(line) || rest === '') return TAB_SIZE_HEADING[parseInt(m[1], 10)] || null;
+    return null;
+}
+
+function parseWeekDate(week) {
+    if (!week) return null;
+    const cleaned = week.replace(/(\d+)(st|nd|rd|th)/gi, '$1');
+    const d = new Date(cleaned);
+    if (isNaN(d.getTime())) return null;
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+function parsePaste(text) {
+    let week = null, tab = null;
+    const rows = [], totals = {};
+    for (const raw of text.split('\n')) {
+        const line = raw.trim();
+        if (!line) continue;
+
+        const w = line.match(/Week of ([A-Za-z]+ \d{1,2}(?:st|nd|rd|th)?, \d{4})/i);
+        if (w) { week = w[1]; continue; }
+
+        const tot = line.match(/^Total:\s*([\d,]+)/i);
+        if (tot && tab) { totals[tab] = parseInt(tot[1].replace(/,/g, ''), 10); continue; }
+
+        const h = headingTabOf(line);
+        if (h) { tab = h; continue; }
+        if (normName(line) === 'liners' || normName(line) === 'liner') { tab = 'liners'; continue; }
+
+        const lm = line.match(/^(\d[\d,]*)\s+(.+?)\s*$/);
+        if (lm && tab) rows.push({ qty: parseInt(lm[1].replace(/,/g, ''), 10), name: lm[2].trim(), tab });
+    }
+    return { week, rows, totals };
+}
+
+let lastPaste = null;
+
+function clearPaste() {
+    document.getElementById('pasteInput').value = '';
+    document.getElementById('pasteReview').innerHTML = '';
+    lastPaste = null;
+}
+
+function reviewPaste() {
+    const text = document.getElementById('pasteInput').value;
+    const box = document.getElementById('pasteReview');
+    if (!text.trim()) { showBanner('err', 'Paste the list first.'); return; }
+
+    const parsed = parsePaste(text);
+    if (!parsed.rows.length) {
+        box.innerHTML = '<p class="hint" style="color:#a12622;margin-top:12px">No "quantity plant name" lines found under a size heading.</p>';
+        return;
+    }
+    const iso = parseWeekDate(parsed.week);
+    if (!iso) {
+        box.innerHTML = '<p class="hint" style="color:#a12622;margin-top:12px">Could not read a "Week of ..." date — add one in the text.</p>';
+        return;
+    }
+
+    const matched = [], unmatched = [];
+    for (const r of parsed.rows) {
+        const m = matchPlant(r.name, r.tab);
+        if (m.error) { unmatched.push({ ...r, why: m.error }); continue; }
+        const size = CATALOG_SIZE_FOR_TAB[r.tab];
+        const pair = size ? m.plant.i.find(([s]) => s === size) : null;
+        matched.push({
+            tab: r.tab,
+            plant_name: m.plant.n,
+            item_code: pair ? pair[1] : null,
+            catalog_size: size,
+            row_size: TAB_ROW_SIZE[r.tab] !== undefined ? TAB_ROW_SIZE[r.tab] : '',
+            production_date: iso,
+            qty: r.qty,
+            source: '',
+            notes: '',
+            written: r.name,
+            noCode: !!size && !pair,
+        });
+    }
+
+    lastPaste = { matched, unmatched, totals: parsed.totals, iso };
+
+    let html = `<p class="hint" style="margin-top:14px">Week of ${escapeHtml(parsed.week)} → production date ${usDate(iso)}. `
+        + `${matched.length} matched, ${unmatched.length} not matched.</p>`;
+    html += `<div class="results" style="box-shadow:none;border:1px solid #eee;margin-top:8px">
+        <table><thead><tr><th>Qty</th><th>Size</th><th>Plant (catalog name)</th><th class="hide-sm">Code</th></tr></thead><tbody>`;
+    for (const m of matched) {
+        html += `<tr><td class="qty">${m.qty.toLocaleString()}</td><td class="nowrap">${TAB_LABEL[m.tab]}</td>
+            <td>${escapeHtml(m.plant_name)}${m.noCode ? ' <span class="new-chip" style="background:#fdecea;color:#a12622;border-color:#f5c6c3">no code</span>' : ''}</td>
+            <td class="hide-sm nowrap">${m.item_code ? escapeHtml(m.item_code) : '—'}</td></tr>`;
+    }
+    for (const u of unmatched) {
+        html += `<tr style="background:#fdecea"><td class="qty">${u.qty.toLocaleString()}</td>
+            <td class="nowrap">${TAB_LABEL[u.tab]}</td>
+            <td>${escapeHtml(u.name)}<br><span style="color:#a12622;font-size:11px">${escapeHtml(u.why)} — will be skipped</span></td>
+            <td class="hide-sm">—</td></tr>`;
+    }
+    html += '</tbody></table></div>';
+
+    const checks = Object.keys(parsed.totals).map(tab => {
+        const sum = parsed.rows.filter(r => r.tab === tab).reduce((n, r) => n + r.qty, 0);
+        const ok = sum === parsed.totals[tab];
+        return `<span style="color:${ok ? '#2d5016' : '#a12622'}">${TAB_LABEL[tab]} ${sum.toLocaleString()} vs document ${parsed.totals[tab].toLocaleString()} ${ok ? '✓' : '✗'}</span>`;
+    }).join(' &nbsp;·&nbsp; ');
+    if (checks) html += `<p class="hint" style="margin-top:10px">Totals: ${checks}</p>`;
+
+    html += `<div class="row" style="margin-top:12px">
+        <button class="btn" onclick="addPasteToBatch()" ${matched.length ? '' : 'disabled'}>Add ${matched.length} row${matched.length === 1 ? '' : 's'} to batch</button>
+        ${unmatched.length ? '<span class="hint" style="color:#a12622">Fix or drop the red lines before submitting.</span>' : ''}
+    </div>`;
+
+    box.innerHTML = html;
+}
+
+function addPasteToBatch() {
+    if (!lastPaste) return;
+    for (const m of lastPaste.matched) {
+        batch.push({
+            tab: m.tab, plant_name: m.plant_name, item_code: m.item_code,
+            catalog_size: m.catalog_size, row_size: m.row_size,
+            production_date: m.production_date, qty: m.qty, source: '', notes: '',
+        });
+    }
+    renderBatch();
+    showBanner('ok', `Added ${lastPaste.matched.length} rows to the batch below — review, then Submit batch.`);
+    document.getElementById('batchTable').scrollIntoView({ block: 'center', behavior: 'smooth' });
 }
 
 // ---------- misc ----------
