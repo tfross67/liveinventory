@@ -743,6 +743,8 @@ let lastPaste = null;
 function clearPaste() {
     document.getElementById('pasteInput').value = '';
     document.getElementById('pasteReview').innerHTML = '';
+    setFileStatus('');
+    document.getElementById('fileInput').value = '';
     lastPaste = null;
 }
 
