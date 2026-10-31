@@ -197,12 +197,23 @@ let acIndex = -1;
 let acItems = [];
 
 // ---------- search index ----------
+// Only sizes the tracker actually has a tab for are selectable. master_items
+// also carries 'book', '2gal', '15gal' and other SKUs; surfacing those put
+// "Ceanothus · book" at the top of the list ahead of the real pot sizes.
+const SUPPORTED_SIZES = new Set(['4inch', '1gal', '5gal']);
+
 const INDEX = [];
 (function buildIndex() {
     const cat = window.PLANT_CATALOG || [];
     for (const plant of cat) {
-        for (const pair of plant.i) {
-            INDEX.push({ name: plant.n, size: pair[0], code: pair[1] });
+        const usable = plant.i.filter(pair => SUPPORTED_SIZES.has(pair[0]));
+        if (usable.length) {
+            for (const pair of usable) {
+                INDEX.push({ name: plant.n, size: pair[0], code: pair[1] });
+            }
+        } else {
+            // no 4"/1 gal/5 gal SKU — liner-only entry, no item code
+            INDEX.push({ name: plant.n, size: 'liner', code: null });
         }
     }
 })();
@@ -293,7 +304,7 @@ function onPlantInput() {
         html += `<div class="ac-item" data-i="${i}" onmousedown="pickItem(${i})">
             <strong>${escapeHtml(row.name)}</strong>
             <span class="size">${SIZE_LABEL[row.size] || row.size}</span>
-            <span class="code">${escapeHtml(row.code)}</span>
+            ${row.code ? '<span class="code">' + escapeHtml(row.code) + '</span>' : ''}
         </div>`;
     });
 
@@ -398,8 +409,9 @@ function addRow() {
     if (!date) return showBanner('err', 'Pick a production date.');
 
     const tab = TAB_FOR_SIZE[size] || 'liners';
-    // a liners row never carries a pot size, even if the catalog had one
-    const itemCode = tab === 'liners' ? (selection.item_code || null) : selection.item_code;
+    // liner rows carry no item code: the CSV has no code column, and the
+    // catalog's liner-ish SKUs (book, 2gal...) are not production sizes
+    const itemCode = tab === 'liners' ? null : selection.item_code;
 
     batch.push({
         tab,
