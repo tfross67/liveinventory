@@ -43,7 +43,8 @@
         table { width: 100%; border-collapse: collapse; }
         th { background: #2d5016; color: white; padding: 9px 10px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
         td { padding: 9px 10px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: top; }
-        .qty { font-weight: 600; color: #2d5016; }
+        .qty { font-weight: 600; color: #2d5016; white-space: nowrap; }
+        .nowrap { white-space: nowrap; }
         .empty { padding: 24px; text-align: center; color: #888; font-size: 14px; }
         .banner { border-radius: 6px; padding: 11px 14px; font-size: 14px; margin-bottom: 14px; display: none; }
         .banner.show { display: block; }
@@ -466,8 +467,8 @@ function renderBatch() {
     body.innerHTML = batch.map((r, i) => `<tr>
         <td><strong>${escapeHtml(r.plant_name)}</strong></td>
         <td class="hide-sm">${r.item_code ? '<code>' + escapeHtml(r.item_code) + '</code>' : '<span style="color:#aaa">—</span>'}</td>
-        <td>${TAB_LABEL[r.tab]}</td>
-        <td>${usDate(r.production_date)}</td>
+        <td class="nowrap">${TAB_LABEL[r.tab]}</td>
+        <td class="nowrap">${usDate(r.production_date)}</td>
         <td class="qty">${r.qty.toLocaleString()}</td>
         <td class="hide-sm">${r.source ? r.source[0].toUpperCase() + r.source.slice(1) : '—'}</td>
         <td><button class="btn-ghost" onclick="removeRow(${i})">remove</button></td>
@@ -543,8 +544,8 @@ async function loadRecent() {
         }
         body.innerHTML = j.entries.slice(0, 40).map(e => `<tr>
             <td><strong>${escapeHtml(e.plant_name)}</strong>${e.item_code ? '<br><span style="color:#999;font-size:11px">' + escapeHtml(e.item_code) + '</span>' : ''}</td>
-            <td>${TAB_LABEL[e.tab] || e.tab}</td>
-            <td>${usDate(e.production_date)}</td>
+            <td class="nowrap">${TAB_LABEL[e.tab] || e.tab}</td>
+            <td class="nowrap">${usDate(e.production_date)}</td>
             <td class="qty">${Number(e.qty).toLocaleString()}</td>
             <td class="hide-sm">${escapeHtml(e.entered_by || '—')}</td>
         </tr>`).join('');
