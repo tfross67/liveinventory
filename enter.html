@@ -741,7 +741,7 @@ function clearPaste() {
     lastPaste = null;
 }
 
-function reviewPaste() {
+async function reviewPaste() {
     const text = document.getElementById('pasteInput').value;
     const box = document.getElementById('pasteReview');
     if (!text.trim()) { showBanner('err', 'Paste the list first.'); return; }
@@ -758,11 +758,24 @@ function reviewPaste() {
     }
 
     const matched = [], unmatched = [];
+    // Guard against submitting the same week twice: compare against what is
+    // already sitting in the portal (pending rows only — reconciled ones are in
+    // the CSVs and are caught by reconcile_entries.py's own duplicate check).
+    let alreadyThere = null;
+    try {
+        const res = await fetch(FN_URL + '?action=list');
+        const j = await res.json();
+        if (j.ok && Array.isArray(j.entries)) {
+            alreadyThere = new Set(j.entries.map(e => `${e.tab}|${e.plant_name}|${e.production_date}|${e.qty}`));
+        }
+    } catch (e) { /* offline or function down — keep going, just no dup check */ }
+
     for (const r of parsed.rows) {
         const m = matchPlant(r.name, r.tab);
         if (m.error) { unmatched.push({ ...r, why: m.error }); continue; }
         const size = CATALOG_SIZE_FOR_TAB[r.tab];
         const pair = size ? m.plant.i.find(([s]) => s === size) : null;
+        const dupKey = `${r.tab}|${m.plant.n}|${iso}|${r.qty}`;
         matched.push({
             tab: r.tab,
             plant_name: m.plant.n,
@@ -775,19 +788,25 @@ function reviewPaste() {
             notes: '',
             written: r.name,
             noCode: !!size && !pair,
+            dup: !!alreadyThere && alreadyThere.has(dupKey),
         });
     }
 
-    lastPaste = { matched, unmatched, totals: parsed.totals, iso };
+    const fresh = matched.filter(m => !m.dup);
+    lastPaste = { matched, unmatched, fresh, totals: parsed.totals, iso, checked: !!alreadyThere };
 
     let html = `<p class="hint" style="margin-top:14px">Week of ${escapeHtml(parsed.week)} → production date ${usDate(iso)}. `
-        + `${matched.length} matched, ${unmatched.length} not matched.</p>`;
+        + `${matched.length} matched, ${unmatched.length} not matched`
+        + (fresh.length !== matched.length ? `, ${matched.length - fresh.length} already entered` : '')
+        + (alreadyThere ? '' : ' (duplicate check unavailable)') + `.</p>`;
     html += `<div class="results" style="box-shadow:none;border:1px solid #eee;margin-top:8px">
         <table><thead><tr><th>Qty</th><th>Size</th><th>Plant (catalog name)</th><th class="hide-sm">Code</th></tr></thead><tbody>`;
     for (const m of matched) {
-        html += `<tr><td class="qty">${m.qty.toLocaleString()}</td><td class="nowrap">${TAB_LABEL[m.tab]}</td>
-            <td>${escapeHtml(m.plant_name)}${m.noCode ? ' <span class="new-chip" style="background:#fdecea;color:#a12622;border-color:#f5c6c3">no code</span>' : ''}</td>
-            <td class="hide-sm nowrap">${m.item_code ? escapeHtml(m.item_code) : '—'}</td></tr>`;
+        html += `<tr${m.dup ? ' style="opacity:.55"' : ''}><td class="qty">${m.qty.toLocaleString()}</td><td class="nowrap">${TAB_LABEL[m.tab]}</td>
+            <td>${escapeHtml(m.plant_name)}`
+            + (m.noCode ? ' <span class="new-chip" style="background:#fdecea;color:#a12622;border-color:#f5c6c3">no code</span>' : '')
+            + (m.dup ? ' <span class="new-chip">already entered</span>' : '')
+            + `</td><td class="hide-sm nowrap">${m.item_code ? escapeHtml(m.item_code) : '—'}</td></tr>`;
     }
     for (const u of unmatched) {
         html += `<tr style="background:#fdecea"><td class="qty">${u.qty.toLocaleString()}</td>
@@ -805,8 +824,9 @@ function reviewPaste() {
     if (checks) html += `<p class="hint" style="margin-top:10px">Totals: ${checks}</p>`;
 
     html += `<div class="row" style="margin-top:12px">
-        <button class="btn" onclick="addPasteToBatch()" ${matched.length ? '' : 'disabled'}>Add ${matched.length} row${matched.length === 1 ? '' : 's'} to batch</button>
+        <button class="btn" onclick="addPasteToBatch()" ${fresh.length ? '' : 'disabled'}>Add ${fresh.length} row${fresh.length === 1 ? '' : 's'} to batch</button>
         ${unmatched.length ? '<span class="hint" style="color:#a12622">Fix or drop the red lines before submitting.</span>' : ''}
+        ${fresh.length !== matched.length ? '<span class="hint">Rows already in the portal are left out.</span>' : ''}
     </div>`;
 
     box.innerHTML = html;
@@ -814,7 +834,8 @@ function reviewPaste() {
 
 function addPasteToBatch() {
     if (!lastPaste) return;
-    for (const m of lastPaste.matched) {
+    const rows = lastPaste.fresh || lastPaste.matched;
+    for (const m of rows) {
         batch.push({
             tab: m.tab, plant_name: m.plant_name, item_code: m.item_code,
             catalog_size: m.catalog_size, row_size: m.row_size,
@@ -822,7 +843,7 @@ function addPasteToBatch() {
         });
     }
     renderBatch();
-    showBanner('ok', `Added ${lastPaste.matched.length} rows to the batch below — review, then Submit batch.`);
+    showBanner('ok', `Added ${rows.length} rows to the batch below — review, then Submit batch.`);
     document.getElementById('batchTable').scrollIntoView({ block: 'center', behavior: 'smooth' });
 }
 
