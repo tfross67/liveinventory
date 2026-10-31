@@ -592,8 +592,10 @@ function normName(s) {
 }
 
 function balanceQuotes(s) {
+    // split() yields count+1 parts, so an ODD part count means an EVEN number
+    // of apostrophes, i.e. already balanced.
     const t = String(s).replace(/[\u2018\u2019]/g, "'");
-    return t.split("'").length % 2 === 0 ? t : t + "'";
+    return t.split("'").length % 2 === 1 ? t : t + "'";
 }
 
 function cultivarOf(s) {
