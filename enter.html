@@ -59,6 +59,7 @@
             .span-2 { grid-column: span 1; }
             th, td { padding: 8px 6px; font-size: 12px; }
             .hide-sm { display: none; }
+            .ac-item { padding: 13px 12px; }
         }
     </style>
 </head>
@@ -224,13 +225,14 @@ function searchPlants(q) {
     const scored = [];
     for (const row of INDEX) {
         let score = 99;
-        const code = row.code.toLowerCase();
+        // liner-only rows carry no item code
+        const code = (row.code || '').toLowerCase();
         const name = row.name.toLowerCase();
-        if (code === term) score = 0;
-        else if (code.startsWith(term)) score = 1;
+        if (code && code === term) score = 0;
+        else if (code && code.startsWith(term)) score = 1;
         else if (name === term) score = 2;
         else if (name.startsWith(term)) score = 3;
-        else if (code.includes(term)) score = 4;
+        else if (code && code.includes(term)) score = 4;
         else if (name.includes(term)) score = 5;
         if (score < 99) scored.push({ row, score });
         if (scored.length > 4000) break;
