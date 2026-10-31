@@ -43,6 +43,21 @@
         
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+        .enter-link {
+            background: #2d5016; color: white; text-decoration: none; font-size: 13px; font-weight: 600;
+            padding: 8px 14px; border-radius: 6px; white-space: nowrap;
+        }
+        .enter-link:hover { background: #3d6a1e; }
+        .new-chip {
+            background: #e8f4e8; color: #2d5016; font-size: 10px; font-weight: 700; padding: 1px 6px;
+            border-radius: 10px; border: 1px solid #cfe2c9; text-transform: uppercase;
+            letter-spacing: .04em; vertical-align: middle; margin-left: 4px;
+        }
+        .pending-note {
+            background: #e8f4e8; color: #2d5016; border: 1px solid #cfe2c9; border-radius: 8px;
+            padding: 10px 14px; font-size: 13px; margin-bottom: 15px; display: none;
+        }
+        .pending-note.show { display: block; }
     </style>
 </head>
 <body>
@@ -51,9 +66,12 @@
         <p class="subtitle">Native Sons Wholesale Nursery - Internal Use Only</p>
         <p class="update-date">Last updated: <span id="updateDate">Loading...</span></p>
         
-        <div class="contact">
+        <div class="contact" style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
             <strong>Internal Inventory System</strong>
+            <a class="enter-link" href="enter.html">＋ Add production data</a>
         </div>
+
+        <div class="pending-note" id="pendingNote"></div>
         
         <div class="tabs">
             <button class="tab active" onclick="switchTab('liners')">Liners <span class="tab-badge" id="linersCount">0</span></button>
@@ -176,6 +194,52 @@
         let sortCol = { liners: 'date', '4inch': 'date', '1gallon': 'date', '5gallon': 'date', all: 'name' };
         let sortAsc = { liners: false, '4inch': false, '1gallon': false, '5gallon': false, all: true };
         
+        const PROP_ENTRY_LIST = 'https://ruwyfesblmaurfuiaofw.supabase.co/functions/v1/prop-entry?action=list';
+
+        // Rows entered through enter.html that have not yet been folded into the
+        // weekly CSVs. They render inline with a "new" chip so nobody wonders why
+        // a plant is on the page but not in the file.
+        async function loadPendingEntries() {
+            try {
+                const res = await fetch(PROP_ENTRY_LIST);
+                if (!res.ok) return;
+                const j = await res.json();
+                if (!j.ok || !Array.isArray(j.entries) || !j.entries.length) return;
+
+                const byPerson = new Set();
+                j.entries.forEach(e => {
+                    const tab = data[e.tab] ? e.tab : null;
+                    if (!tab) return;
+                    const parts = String(e.production_date || '').split('-');
+                    const ok = parts.length === 3;
+                    const date = ok ? `${parseInt(parts[1], 10)}/${parseInt(parts[2], 10)}/${parts[0]}` : (e.production_date || '');
+                    const sortDate = ok ? new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)).getTime() : 0;
+                    data[tab].push({
+                        name: e.plant_name,
+                        date,
+                        qty: Number(e.qty) || 0,
+                        size: e.row_size || '',
+                        cuttings: e.source || '',
+                        notes: e.notes || '',
+                        sortDate,
+                        pending: true,
+                        enteredBy: e.entered_by || ''
+                    });
+                    if (e.entered_by) byPerson.add(e.entered_by);
+                });
+
+                window.pendingCount = j.entries.length;
+                const note = document.getElementById('pendingNote');
+                if (j.entries.length) {
+                    const who = byPerson.size ? ' by ' + Array.from(byPerson).join(', ') : '';
+                    note.textContent = `${j.entries.length} row${j.entries.length === 1 ? '' : 's'} entered${who} not yet folded into the CSV — shown with a “new” chip.`;
+                    note.classList.add('show');
+                }
+            } catch (err) {
+                console.warn('pending entries unavailable:', err);
+            }
+        }
+
         async function loadData() {
             try {
                 // Load all tabs
@@ -205,6 +269,9 @@
                     });
                 }
                 
+                // Rows entered on enter.html (not yet in the CSVs) render inline
+                await loadPendingEntries();
+
                 // Update counts
                 document.getElementById('linersCount').textContent = data.liners.length;
                 document.getElementById('4inchCount').textContent = data['4inch'].length;
@@ -354,13 +421,14 @@ function sort(tab, col) {
             } else {
                 let html = '';
                 filtered.forEach(p => {
-                    const type = p.notes.toUpperCase().includes('DIVISION') ? 'Division' : 
+                    const type = p.cuttings.toUpperCase().includes('DIVISION') ? 'Division' :
+                                p.notes.toUpperCase().includes('DIVISION') ? 'Division' : 
                                 p.cuttings.toUpperCase().includes('CUTTING') ? 'Cuttings' :
                                 p.cuttings.toUpperCase().includes('SEED') ? 'Seed' : '-';
                     
                     // Get pricing for 1gallon and 5gallon tabs
                     html += `<tr>
-                        <td><strong>${p.name}</strong></td>
+                        <td><strong>${p.name}</strong>${p.pending ? '<span class="new-chip" title="Entered on the production entry page; not yet in the CSV">new</span>' : ''}</td>
                         <td>${p.date}</td>
                         <td class="qty">${p.qty.toLocaleString()}</td>
                         <td>${p.size}</td>
@@ -378,22 +446,22 @@ function sort(tab, col) {
             let all = [];
             data.liners.forEach(p => {
                 if ((!search || p.name.toLowerCase().includes(search)) && (!month || p.date === month)) {
-                    all.push({ name: p.name, size: 'Liner', date: p.date, qty: p.qty, sortDate: p.sortDate });
+                    all.push({ name: p.name, size: 'Liner', date: p.date, qty: p.qty, sortDate: p.sortDate, pending: p.pending });
                 }
             });
             data['4inch'].forEach(p => {
                 if ((!search || p.name.toLowerCase().includes(search)) && (!month || p.date === month)) {
-                    all.push({ name: p.name, size: '4"', date: p.date, qty: p.qty, sortDate: p.sortDate });
+                    all.push({ name: p.name, size: '4"', date: p.date, qty: p.qty, sortDate: p.sortDate, pending: p.pending });
                 }
             });
             data['1gallon'].forEach(p => {
                 if ((!search || p.name.toLowerCase().includes(search)) && (!month || p.date === month)) {
-                    all.push({ name: p.name, size: '1G', date: p.date, qty: p.qty, sortDate: p.sortDate });
+                    all.push({ name: p.name, size: '1G', date: p.date, qty: p.qty, sortDate: p.sortDate, pending: p.pending });
                 }
             });
             data['5gallon'].forEach(p => {
                 if ((!search || p.name.toLowerCase().includes(search)) && (!month || p.date === month)) {
-                    all.push({ name: p.name, size: '5G', date: p.date, qty: p.qty, sortDate: p.sortDate });
+                    all.push({ name: p.name, size: '5G', date: p.date, qty: p.qty, sortDate: p.sortDate, pending: p.pending });
                 }
             });
             
@@ -416,7 +484,7 @@ function sort(tab, col) {
                 all.forEach(p => {
                     const badge = p.size === 'Liner' ? '#2d5016' : p.size === '4"' ? '#5484ed' : p.size === '1G' ? '#dc2127' : '#9b59b6';
                     html += `<tr>
-                        <td><strong>${p.name}</strong></td>
+                        <td><strong>${p.name}</strong>${p.pending ? '<span class="new-chip" title="Entered on the production entry page; not yet in the CSV">new</span>' : ''}</td>
                         <td><span style="background:${badge}20;color:${badge};padding:2px 8px;border-radius:4px;font-size:12px;">${p.size}</span></td>
                         <td>${p.date}</td>
                         <td class="qty">${p.qty.toLocaleString()}</td>

@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2d5016">
+    <title>Native Sons - Production Entry</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 20px; color: #222; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 { color: #2d5016; margin-bottom: 4px; font-size: 24px; }
+        .subtitle { color: #666; margin-bottom: 18px; font-size: 14px; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 18px; }
+        .card h2 { font-size: 15px; color: #2d5016; margin-bottom: 14px; text-transform: uppercase; letter-spacing: .04em; }
+        label { display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .03em; }
+        input, select, textarea, button { font-family: inherit; font-size: 16px; }
+        input, select, textarea { width: 100%; padding: 11px; border: 1px solid #ddd; border-radius: 6px; background: white; }
+        input:focus, select:focus, textarea:focus { outline: 2px solid #2d5016; outline-offset: 1px; border-color: #2d5016; }
+        .grid { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+        .grid-3 { display: grid; gap: 14px; grid-template-columns: 1fr 1fr 1fr; }
+        .span-2 { grid-column: span 2; }
+        .btn { padding: 12px 20px; border: none; border-radius: 6px; background: #2d5016; color: white; font-weight: 600; cursor: pointer; }
+        .btn:hover { background: #3d6a1e; }
+        .btn:disabled { background: #b9c8b2; cursor: not-allowed; }
+        .btn-secondary { background: white; color: #2d5016; border: 1px solid #2d5016; }
+        .btn-secondary:hover { background: #e8f4e8; }
+        .btn-ghost { background: none; color: #888; border: none; padding: 4px 8px; cursor: pointer; font-size: 13px; text-decoration: underline; }
+        .hint { font-size: 12px; color: #888; margin-top: 5px; }
+        .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .grow { flex: 1; }
+        .ac-wrap { position: relative; }
+        .ac-list { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 2px); background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 6px 16px rgba(0,0,0,.12); max-height: 320px; overflow-y: auto; display: none; }
+        .ac-list.open { display: block; }
+        .ac-item { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; font-size: 14px; }
+        .ac-item:last-child { border-bottom: none; }
+        .ac-item:hover, .ac-item.active { background: #e8f4e8; }
+        .ac-item .code { color: #888; font-size: 12px; font-family: ui-monospace, Menlo, monospace; margin-left: 6px; }
+        .ac-item .size { background: #2d5016; color: white; font-size: 11px; padding: 1px 6px; border-radius: 10px; margin-left: 6px; }
+        .ac-item .free { color: #8a6d1f; }
+        .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+        .chip { background: #e8f4e8; color: #2d5016; border: 1px solid #cfe2c9; border-radius: 20px; padding: 3px 9px; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #2d5016; color: white; padding: 9px 10px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+        td { padding: 9px 10px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: top; }
+        .qty { font-weight: 600; color: #2d5016; }
+        .empty { padding: 24px; text-align: center; color: #888; font-size: 14px; }
+        .banner { border-radius: 6px; padding: 11px 14px; font-size: 14px; margin-bottom: 14px; display: none; }
+        .banner.show { display: block; }
+        .banner.ok { background: #e8f4e8; color: #2d5016; border: 1px solid #cfe2c9; }
+        .banner.err { background: #fdecea; color: #a12622; border: 1px solid #f5c6c3; }
+        .who { font-size: 13px; color: #666; }
+        .who strong { color: #2d5016; }
+        .hidden { display: none !important; }
+        .mobile-note { font-size: 12px; color: #888; margin-top: 10px; }
+        @media (max-width: 640px) {
+            body { padding: 12px; }
+            .grid, .grid-3 { grid-template-columns: 1fr; }
+            .span-2 { grid-column: span 1; }
+            th, td { padding: 8px 6px; font-size: 12px; }
+            .hide-sm { display: none; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🌱 Production Entry</h1>
+    <p class="subtitle">Native Sons Wholesale Nursery &middot; internal use only</p>
+
+    <!-- Sign in -->
+    <div class="card" id="signInCard">
+        <h2>Sign in</h2>
+        <div class="grid">
+            <div>
+                <label for="codeInput">Your access code</label>
+                <input type="text" id="codeInput" placeholder="e.g. cedar-1234" autocomplete="off" autocapitalize="none" spellcheck="false">
+                <p class="hint">Ask Tim if you don't have one.</p>
+            </div>
+            <div style="display:flex; align-items:flex-end;">
+                <button class="btn" id="signInBtn" onclick="signIn()">Sign in</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Entry -->
+    <div id="app" class="hidden">
+        <div class="card" style="padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <span class="who">Signed in as <strong id="whoName">—</strong></span>
+            <span class="row">
+                <a href="index.html" style="font-size:13px; color:#2d5016;">&larr; Back to inventory</a>
+                <button class="btn-ghost" onclick="signOut()">Sign out</button>
+            </span>
+        </div>
+
+        <div id="banner" class="banner"></div>
+
+        <div class="card">
+            <h2>Add a production row</h2>
+            <div class="grid">
+                <div class="span-2 ac-wrap">
+                    <label for="plantInput">Plant &mdash; type an item code or a name</label>
+                    <input type="text" id="plantInput" placeholder="ceayan1 or Ceanothus Yankee" autocomplete="off" autocapitalize="none" spellcheck="false" oninput="onPlantInput()" onkeydown="onPlantKey(event)">
+                    <div class="ac-list" id="acList"></div>
+                    <p class="hint">Pick from the list so the name matches the plant database exactly.</p>
+                </div>
+                <div>
+                    <label for="sizeSelect">Size / tab</label>
+                    <select id="sizeSelect" onchange="onSizeChange()"></select>
+                </div>
+                <div>
+                    <label for="dateInput">Production date</label>
+                    <input type="date" id="dateInput">
+                </div>
+                <div>
+                    <label for="qtyInput">Quantity</label>
+                    <input type="number" id="qtyInput" min="1" step="1" inputmode="numeric" placeholder="0">
+                </div>
+                <div>
+                    <label for="sourceSelect">Cuttings / seed</label>
+                    <select id="sourceSelect">
+                        <option value="">—</option>
+                        <option value="cuttings">Cuttings</option>
+                        <option value="seed">Seed</option>
+                        <option value="division">Division</option>
+                    </select>
+                </div>
+                <div class="span-2">
+                    <label for="notesInput">Notes</label>
+                    <input type="text" id="notesInput" placeholder="optional">
+                </div>
+                <div class="span-2 row">
+                    <button class="btn" onclick="addRow()" id="addBtn">Add to this batch</button>
+                    <button class="btn btn-secondary" onclick="clearForm()">Clear</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>This batch <span id="batchCount" class="who">(0 rows)</span></h2>
+            <table id="batchTable">
+                <thead>
+                    <tr>
+                        <th>Plant</th>
+                        <th class="hide-sm">Code</th>
+                        <th>Size</th>
+                        <th>Date</th>
+                        <th>Qty</th>
+                        <th class="hide-sm">Source</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="batchBody"></tbody>
+            </table>
+            <div class="row" style="margin-top:16px;">
+                <button class="btn" id="submitBtn" onclick="submitBatch()" disabled>Submit batch</button>
+                <button class="btn btn-secondary" onclick="downloadCsv()" id="csvBtn" disabled>Download CSV instead</button>
+            </div>
+            <p class="mobile-note">Submitting sends the rows straight to the inventory tracker. Use "Download CSV" if you'd rather hand the file to Tim.</p>
+        </div>
+
+        <div class="card">
+            <h2>Recent entries</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Plant</th>
+                        <th>Size</th>
+                        <th>Date</th>
+                        <th>Qty</th>
+                        <th class="hide-sm">Entered by</th>
+                    </tr>
+                </thead>
+                <tbody id="recentBody"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="plant-catalog.js"></script>
+<script>
+// NOTE on innerHTML: every interpolated dynamic value below passes through
+// escapeHtml(); the only other inserts are SIZE_LABEL / TAB_LABEL constants and
+// ISO dates rendered by usDate(). Keep that invariant when editing this file.
+const FN_URL = 'https://ruwyfesblmaurfuiaofw.supabase.co/functions/v1/prop-entry';
+const STORE_CODE = 'ns_prop_code';
+const STORE_NAME = 'ns_prop_name';
+
+const TAB_FOR_SIZE = { '4inch': '4inch', '1gal': '1gallon', '5gal': '5gallon' };
+const ROW_SIZE = { '4inch': '4" 16 Tray', '1gal': '1 gallon', '5gal': '5g', 'liner': '' };
+const SIZE_LABEL = { '4inch': '4" Pot', '1gal': '1 Gallon', '5gal': '5 Gallon', 'liner': 'Liner (no item code)' };
+const TAB_LABEL = { liners: 'Liner', '4inch': '4" Pot', '1gallon': '1 Gallon', '5gallon': '5 Gallon' };
+
+let me = { code: '', name: '' };
+let selection = null;      // { name, size, item_code, freeText }
+let batch = [];
+let acIndex = -1;
+let acItems = [];
+
+// ---------- search index ----------
+const INDEX = [];
+(function buildIndex() {
+    const cat = window.PLANT_CATALOG || [];
+    for (const plant of cat) {
+        for (const pair of plant.i) {
+            INDEX.push({ name: plant.n, size: pair[0], code: pair[1] });
+        }
+    }
+})();
+
+function searchPlants(q) {
+    const term = q.trim().toLowerCase();
+    if (term.length < 2) return [];
+    const scored = [];
+    for (const row of INDEX) {
+        let score = 99;
+        const code = row.code.toLowerCase();
+        const name = row.name.toLowerCase();
+        if (code === term) score = 0;
+        else if (code.startsWith(term)) score = 1;
+        else if (name === term) score = 2;
+        else if (name.startsWith(term)) score = 3;
+        else if (code.includes(term)) score = 4;
+        else if (name.includes(term)) score = 5;
+        if (score < 99) scored.push({ row, score });
+        if (scored.length > 4000) break;
+    }
+    scored.sort((a, b) => a.score - b.score || a.row.name.localeCompare(b.row.name));
+    // collapse to one row per plant+size, max 9
+    return scored.slice(0, 9).map(s => s.row);
+}
+
+// ---------- sign in ----------
+async function signIn() {
+    const code = document.getElementById('codeInput').value.trim();
+    if (!code) return;
+    const btn = document.getElementById('signInBtn');
+    btn.disabled = true; btn.textContent = 'Checking…';
+    try {
+        const r = await fetch(FN_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'login', code }),
+        });
+        const j = await r.json();
+        if (!r.ok || !j.ok) throw new Error(j.error || 'sign in failed');
+        localStorage.setItem(STORE_CODE, code);
+        localStorage.setItem(STORE_NAME, j.name);
+        startSession(code, j.name);
+    } catch (e) {
+        showBanner('err', e.message === 'wrong access code' ? 'That code was not recognised.' : e.message);
+    } finally {
+        btn.disabled = false; btn.textContent = 'Sign in';
+    }
+}
+
+function startSession(code, name) {
+    me = { code, name };
+    document.getElementById('signInCard').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    document.getElementById('whoName').textContent = name;
+    document.getElementById('dateInput').value = todayIso();
+    resetSizes();
+    loadRecent();
+}
+
+function signOut() {
+    localStorage.removeItem(STORE_CODE);
+    localStorage.removeItem(STORE_NAME);
+    me = { code: '', name: '' };
+    batch = [];
+    renderBatch();
+    document.getElementById('app').classList.add('hidden');
+    document.getElementById('signInCard').classList.remove('hidden');
+    document.getElementById('codeInput').value = '';
+}
+
+// ---------- form ----------
+function todayIso() {
+    const d = new Date();
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+function onPlantInput() {
+    const q = document.getElementById('plantInput').value;
+    const list = document.getElementById('acList');
+    selection = null;
+    acItems = searchPlants(q);
+    acIndex = -1;
+
+    let html = '';
+    acItems.forEach((row, i) => {
+        html += `<div class="ac-item" data-i="${i}" onmousedown="pickItem(${i})">
+            <strong>${escapeHtml(row.name)}</strong>
+            <span class="size">${SIZE_LABEL[row.size] || row.size}</span>
+            <span class="code">${escapeHtml(row.code)}</span>
+        </div>`;
+    });
+
+    const typed = q.trim();
+    const exactName = acItems.some(r => r.name.toLowerCase() === typed.toLowerCase());
+    if (typed.length >= 3 && !exactName) {
+        html += `<div class="ac-item free" data-free="1" onmousedown="pickFreeText()">
+            Use &ldquo;<strong>${escapeHtml(typed)}</strong>&rdquo; as written &mdash; liner only
+        </div>`;
+    }
+
+    if (!html) { list.classList.remove('open'); list.innerHTML = ''; return; }
+    list.innerHTML = html;
+    list.classList.add('open');
+}
+
+function pickItem(i) {
+    const row = acItems[i];
+    if (!row) return;
+    selection = { name: row.name, size: row.size, item_code: row.code, freeText: false };
+    document.getElementById('plantInput').value = row.name;
+    document.getElementById('acList').classList.remove('open');
+    fillSizes(row.name);
+}
+
+function pickFreeText() {
+    const typed = document.getElementById('plantInput').value.trim();
+    selection = { name: typed, size: 'liner', item_code: null, freeText: true };
+    document.getElementById('acList').classList.remove('open');
+    fillSizes(typed, true);
+}
+
+function onPlantKey(e) {
+    const list = document.getElementById('acList');
+    if (!list.classList.contains('open')) return;
+    const nodes = list.querySelectorAll('.ac-item');
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        acIndex += e.key === 'ArrowDown' ? 1 : -1;
+        if (acIndex < 0) acIndex = nodes.length - 1;
+        if (acIndex >= nodes.length) acIndex = 0;
+        nodes.forEach((n, i) => n.classList.toggle('active', i === acIndex));
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const node = nodes[acIndex] || nodes[0];
+        if (node) node.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    } else if (e.key === 'Escape') {
+        list.classList.remove('open');
+    }
+}
+
+function resetSizes() {
+    const sel = document.getElementById('sizeSelect');
+    sel.innerHTML = '<option value="">&mdash; pick a plant first &mdash;</option>';
+}
+
+function fillSizes(name, free) {
+    const sel = document.getElementById('sizeSelect');
+    const cat = (window.PLANT_CATALOG || []).find(p => p.n === name);
+    let sizes = [];
+
+    if (free || !cat) {
+        sizes = ['liner'];
+    } else {
+        cat.i.forEach(([size]) => {
+            if (TAB_FOR_SIZE[size]) sizes.push(size);
+        });
+        sizes.push('liner');
+    }
+
+    sel.innerHTML = sizes.map(s => `<option value="${s}">${SIZE_LABEL[s] || s}</option>`).join('');
+    if (selection && sizes.includes(selection.size)) sel.value = selection.size;
+    onSizeChange();
+}
+
+function onSizeChange() {
+    const size = document.getElementById('sizeSelect').value;
+    if (selection) {
+        selection.size = size;
+        if (size === 'liner' && !selection.freeText) selection.item_code = selection.item_code || null;
+    }
+}
+
+function clearForm() {
+    document.getElementById('plantInput').value = '';
+    document.getElementById('qtyInput').value = '';
+    document.getElementById('notesInput').value = '';
+    document.getElementById('sourceSelect').value = '';
+    document.getElementById('dateInput').value = todayIso();
+    selection = null;
+    resetSizes();
+    document.getElementById('acList').classList.remove('open');
+}
+
+function addRow() {
+    if (!selection) return showBanner('err', 'Pick a plant from the list first.');
+    const size = document.getElementById('sizeSelect').value;
+    const qty = parseInt(document.getElementById('qtyInput').value, 10);
+    const date = document.getElementById('dateInput').value;
+    if (!size) return showBanner('err', 'Choose a size / tab.');
+    if (!qty || qty < 1) return showBanner('err', 'Enter a quantity.');
+    if (!date) return showBanner('err', 'Pick a production date.');
+
+    const tab = TAB_FOR_SIZE[size] || 'liners';
+    // a liners row never carries a pot size, even if the catalog had one
+    const itemCode = tab === 'liners' ? (selection.item_code || null) : selection.item_code;
+
+    batch.push({
+        tab,
+        plant_name: selection.name,
+        item_code: itemCode,
+        catalog_size: size === 'liner' ? null : size,
+        row_size: ROW_SIZE[size] !== undefined ? ROW_SIZE[size] : '',
+        production_date: date,
+        qty,
+        source: document.getElementById('sourceSelect').value,
+        notes: document.getElementById('notesInput').value.trim(),
+    });
+
+    hideBanner();
+    document.getElementById('qtyInput').value = '';
+    document.getElementById('notesInput').value = '';
+    document.getElementById('plantInput').value = '';
+    selection = null;
+    resetSizes();
+    document.getElementById('plantInput').focus();
+    renderBatch();
+}
+
+function removeRow(i) {
+    batch.splice(i, 1);
+    renderBatch();
+}
+
+function renderBatch() {
+    const body = document.getElementById('batchBody');
+    document.getElementById('batchCount').textContent = `(${batch.length} row${batch.length === 1 ? '' : 's'})`;
+    const has = batch.length > 0;
+    document.getElementById('submitBtn').disabled = !has;
+    document.getElementById('csvBtn').disabled = !has;
+
+    if (!has) {
+        body.innerHTML = '<tr><td colspan="7" class="empty">No rows yet — add one above.</td></tr>';
+        return;
+    }
+    body.innerHTML = batch.map((r, i) => `<tr>
+        <td><strong>${escapeHtml(r.plant_name)}</strong></td>
+        <td class="hide-sm">${r.item_code ? '<code>' + escapeHtml(r.item_code) + '</code>' : '<span style="color:#aaa">—</span>'}</td>
+        <td>${TAB_LABEL[r.tab]}</td>
+        <td>${usDate(r.production_date)}</td>
+        <td class="qty">${r.qty.toLocaleString()}</td>
+        <td class="hide-sm">${r.source ? r.source[0].toUpperCase() + r.source.slice(1) : '—'}</td>
+        <td><button class="btn-ghost" onclick="removeRow(${i})">remove</button></td>
+    </tr>`).join('');
+}
+
+async function submitBatch() {
+    if (!batch.length) return;
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true; btn.textContent = 'Submitting…';
+    try {
+        const r = await fetch(FN_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'submit', code: me.code, rows: batch }),
+        });
+        const j = await r.json();
+        if (!r.ok || !j.ok) throw new Error(j.error || 'submit failed');
+        showBanner('ok', `Saved ${j.inserted} row${j.inserted === 1 ? '' : 's'}. They're on the inventory tracker now.`);
+        batch = [];
+        renderBatch();
+        loadRecent();
+    } catch (e) {
+        showBanner('err', e.message);
+    } finally {
+        btn.textContent = 'Submit batch';
+        btn.disabled = batch.length === 0;
+    }
+}
+
+// ---------- CSV ----------
+function csvField(v) {
+    const s = v == null ? '' : String(v);
+    if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+}
+
+function downloadCsv() {
+    if (!batch.length) return;
+    const tabs = [...new Set(batch.map(r => r.tab))];
+    let out = '';
+    for (const tab of tabs) {
+        out += `PLANT NAME,PRODUCTION DATE,QUANTITY,SIZE,CUTTINGS / SEED,NOTES\n`;
+        batch.filter(r => r.tab === tab).forEach(r => {
+            out += [r.plant_name, usDate(r.production_date), r.qty, r.row_size, r.source, r.notes]
+                .map(csvField).join(',') + '\n';
+        });
+        out += '\n';
+    }
+    const blob = new Blob([out], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `production-${todayIso()}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+function usDate(iso) {
+    const [y, m, d] = iso.split('-');
+    return `${parseInt(m, 10)}/${parseInt(d, 10)}/${y}`;
+}
+
+// ---------- recent ----------
+async function loadRecent() {
+    try {
+        const r = await fetch(FN_URL + '?action=list');
+        const j = await r.json();
+        if (!r.ok || !j.ok) throw new Error(j.error || 'could not load');
+        const body = document.getElementById('recentBody');
+        if (!j.entries.length) {
+            body.innerHTML = '<tr><td colspan="5" class="empty">Nothing entered yet.</td></tr>';
+            return;
+        }
+        body.innerHTML = j.entries.slice(0, 40).map(e => `<tr>
+            <td><strong>${escapeHtml(e.plant_name)}</strong>${e.item_code ? '<br><span style="color:#999;font-size:11px">' + escapeHtml(e.item_code) + '</span>' : ''}</td>
+            <td>${TAB_LABEL[e.tab] || e.tab}</td>
+            <td>${usDate(e.production_date)}</td>
+            <td class="qty">${Number(e.qty).toLocaleString()}</td>
+            <td class="hide-sm">${escapeHtml(e.entered_by || '—')}</td>
+        </tr>`).join('');
+    } catch (e) {
+        document.getElementById('recentBody').innerHTML = `<tr><td colspan="5" class="empty">${escapeHtml(e.message)}</td></tr>`;
+    }
+}
+
+// ---------- misc ----------
+function showBanner(kind, msg) {
+    const b = document.getElementById('banner');
+    b.className = 'banner show ' + kind;
+    b.textContent = msg;
+}
+function hideBanner() { document.getElementById('banner').className = 'banner'; }
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+document.addEventListener('mousedown', e => {
+    if (!e.target.closest('.ac-wrap')) document.getElementById('acList').classList.remove('open');
+});
+
+(function boot() {
+    const code = localStorage.getItem(STORE_CODE);
+    const name = localStorage.getItem(STORE_NAME);
+    document.getElementById('dateInput').value = todayIso();
+    renderBatch();
+    if (code && name) startSession(code, name);
+})();
+</script>
+</body>
+</html>
