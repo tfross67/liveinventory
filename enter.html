@@ -580,6 +580,10 @@ async function loadRecent() {
 // If you change the matching here, change it there too (and vice versa).
 
 const ALIASES = { thyme: 'thymus', lavender: 'lavandula', rosemary: 'rosmarinus', sage: 'salvia' };
+// Her known shorthands and typos. Curated on purpose: fuzzy auto-correct would
+// silently file plants under the wrong SKU. Keep in sync with NAME_TYPOS in
+// scripts/import_pages_list.py.
+const NAME_TYPOS = { 'polystichum minimum': 'Polystichum munitum' };
 const CATALOG_SIZE_FOR_TAB = { '4inch': '4inch', '1gallon': '1gal', '5gallon': '5gal', liners: null };
 const TAB_ROW_SIZE = { '4inch': '4" 16 Tray', '1gallon': '1 gallon', '5gallon': '5g', liners: '' };
 const TAB_SIZE_HEADING = { 1: '1gallon', 4: '4inch', 5: '5gallon' };
@@ -640,6 +644,7 @@ function nameIndex() {
 
 function matchPlant(name, tab) {
     const { byName, byGenus } = nameIndex();
+    name = NAME_TYPOS[normName(balanceQuotes(name))] || name;
     const target = normName(balanceQuotes(name));
     if (byName.has(target)) return { plant: byName.get(target), how: 'exact' };
 
@@ -748,6 +753,31 @@ function clearPaste() {
     lastPaste = null;
 }
 
+function closestName(target, candidates) {
+    // display-only suggestion for a line that did not match
+    const grams = s => {
+        const m = new Map();
+        for (let i = 0; i < s.length - 1; i++) {
+            const g = s.slice(i, i + 2);
+            m.set(g, (m.get(g) || 0) + 1);
+        }
+        return m;
+    };
+    const t = target.toLowerCase();
+    let best = null, bestScore = 0;
+    for (const p of candidates) {
+        const n = normName(p.n);
+        if (t.length < 2 || n.length < 2) continue;
+        const A = grams(t), B = grams(n);
+        let inter = 0, total = 0;
+        A.forEach((c, g) => { total += c; if (B.has(g)) inter += Math.min(c, B.get(g)); });
+        B.forEach(c => { total += c; });
+        const score = (2 * inter) / total;
+        if (score > bestScore) { bestScore = score; best = p.n; }
+    }
+    return bestScore >= 0.8 ? best : null;
+}
+
 async function reviewPaste() {
     const text = document.getElementById('pasteInput').value;
     const box = document.getElementById('pasteReview');
@@ -779,7 +809,11 @@ async function reviewPaste() {
 
     for (const r of parsed.rows) {
         const m = matchPlant(r.name, r.tab);
-        if (m.error) { unmatched.push({ ...r, why: m.error }); continue; }
+        if (m.error) {
+            const cands = nameIndex().byGenus.get(genusOf(balanceQuotes(r.name))) || [];
+            unmatched.push({ ...r, why: m.error, hint: closestName(normName(balanceQuotes(r.name)), cands) });
+            continue;
+        }
         const size = CATALOG_SIZE_FOR_TAB[r.tab];
         const pair = size ? m.plant.i.find(([s]) => s === size) : null;
         const dupKey = `${r.tab}|${m.plant.n}|${iso}|${r.qty}`;
@@ -818,7 +852,7 @@ async function reviewPaste() {
     for (const u of unmatched) {
         html += `<tr style="background:#fdecea"><td class="qty">${u.qty.toLocaleString()}</td>
             <td class="nowrap">${TAB_LABEL[u.tab]}</td>
-            <td>${escapeHtml(u.name)}<br><span style="color:#a12622;font-size:11px">${escapeHtml(u.why)} — will be skipped</span></td>
+            <td>${escapeHtml(u.name)}<br><span style="color:#a12622;font-size:11px">${escapeHtml(u.why)}${u.hint ? ' — closest: ' + escapeHtml(u.hint) : ''} — will be skipped</span></td>
             <td class="hide-sm">—</td></tr>`;
     }
     html += '</tbody></table></div>';

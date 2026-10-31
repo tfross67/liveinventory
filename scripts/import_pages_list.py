@@ -135,9 +135,30 @@ def build_matcher(catalog):
     return merged, by_genus
 
 
+# Her known shorthands and typos, keyed by normalized name. Curated on purpose:
+# a generic fuzzy auto-correct would silently file 500 plants under the wrong SKU.
+NAME_TYPOS = {
+    "polystichum minimum": "Polystichum munitum",   # confirmed by Tim 2026-10-31
+}
+
+
+def closest_name(target: str, candidates, limit: int = 4):
+    """Best-guess catalog name for a line that did not match — display only."""
+    import difflib
+
+    best, best_score = None, 0.0
+    for p in candidates:
+        score = difflib.SequenceMatcher(None, target, norm(p["n"])).ratio()
+        if score > best_score:
+            best, best_score = p["n"], score
+    return best if best_score >= 0.8 else None
+
+
 def match(name, tab, exact, by_genus):
     """Return (plant, how) or (None, reason)."""
+    name = NAME_TYPOS.get(norm(balance_quotes(name)), name)
     target = norm(balance_quotes(name))
+
     if target in exact:
         return exact[target], "exact"
 
@@ -334,7 +355,10 @@ def main():
     if unmatched:
         print("\nUNMATCHED (skipped — add them by hand or fix the name):")
         for r, why in unmatched:
-            print(f"  {r['qty']:>6}  {r['tab']:<7} {r['name']}   [{why}]")
+            cands = by_genus.get(genus_of(balance_quotes(r["name"])), [])
+            hint = closest_name(norm(balance_quotes(r["name"])), cands)
+            suffix = "   closest: " + hint if hint else ""
+            print(f"  {r['qty']:>6}  {r['tab']:<7} {r['name']}   [{why}]{suffix}")
 
     print("\ntotals check:")
     for tab, expected in totals.items():
