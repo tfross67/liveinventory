@@ -310,8 +310,14 @@
                 
                 // Parse date for proper sorting
                 const dateParts = date.split('/');
-                const sortDate = dateParts.length === 3 ? 
-                    new Date(parseInt('20' + dateParts[2]), parseInt(dateParts[0]) - 1, parseInt(dateParts[1])).getTime() : 0;
+                // The CSVs write a 4-digit year (M/D/YYYY); older sheets used M/D/YY.
+                // Prepending "20" unconditionally turned 7/20/2026 into year 202026,
+                // which sorted every CSV row above any live-entry row.
+                const yearPart = dateParts.length === 3 ? dateParts[2].trim() : '';
+                const sortDate = dateParts.length === 3 ?
+                    new Date(yearPart.length === 4 ? parseInt(yearPart, 10) : parseInt('20' + yearPart, 10),
+                             parseInt(dateParts[0]) - 1, parseInt(dateParts[1])).getTime() : 0;
+
                 
                 plants.push({ name, date, qty, size, cuttings, notes, sortDate });
             }
