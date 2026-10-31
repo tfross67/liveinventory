@@ -1015,7 +1015,28 @@ function looksLikeRun(s) {
 
 async function textFromPages(buf) {
     const doc = await unzipEntry(buf, 'Index/Document.iwa');
-    return iwaText(doc);
+    return trimToBody(iwaText(doc));
+}
+
+// The recovered text starts with the document's internal locale/style tables
+// and ends with a wall of UUIDs. Keep only the list: from the first size or
+// week heading through the last "Total:" line they wrote.
+function trimToBody(text) {
+    const lines = text.split('\n');
+    const isStart = l => /^(?:For\s+)?\d+\s*(?:"|inch\b|in\b|gallon\b|gal\b)/i.test(l.trim())
+        || /^Week of /i.test(l.trim())
+        || /^Liners?$/i.test(l.trim());
+    let start = lines.findIndex(isStart);
+    if (start < 0) start = 0;
+    let end = -1;
+    for (let i = lines.length - 1; i >= 0; i--) {
+        if (/^Total:/i.test(lines[i].trim())) { end = i; break; }
+    }
+    if (end < 0) end = lines.length - 1;
+    // the last Total line usually has the document's UUID tail glued onto it
+    const mt = lines[end].match(/^\s*(Total:\s*[\d,]+)/i);
+    if (mt) lines[end] = mt[1];
+    return lines.slice(start, end + 1).join('\n').trim();
 }
 
 function setFileStatus(msg) {

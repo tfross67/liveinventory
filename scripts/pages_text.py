@@ -158,6 +158,25 @@ def reconstruct(runs) -> str:
     return "\n".join(p.rstrip() for p in paras)
 
 
+def trim_to_body(text: str) -> str:
+    """Keep only the list: first size/week heading through the last 'Total:'.
+
+    The recovered text otherwise starts with the document's internal locale and
+    style tables and ends with a wall of UUIDs.
+    """
+    lines = text.split("\n")
+    start_re = re.compile(
+        r"^(?:For\s+)?\d+\s*(?:\"|inch\b|in\b|gallon\b|gal\b)|^Week of |^Liners?$", re.I
+    )
+    start = next((i for i, l in enumerate(lines) if start_re.match(l.strip())), 0)
+    end = max((i for i, l in enumerate(lines) if l.strip().lower().startswith("total:")), default=len(lines) - 1)
+    # the last Total line usually has the document's UUID tail glued onto it
+    m = re.match(r"\s*(Total:\s*[\d,]+)", lines[end])
+    if m:
+        lines[end] = m.group(1)
+    return "\n".join(lines[start:end + 1]).strip()
+
+
 def main():
     path = sys.argv[1]
     payload = document_payload(path)
@@ -168,7 +187,7 @@ def main():
             print(repr(r))
         return
 
-    text = reconstruct(runs)
+    text = trim_to_body(reconstruct(runs))
     # collapse runs of blank lines, keep single blank separators
     out = []
     blank = 0

@@ -209,7 +209,7 @@ def read_text(path: str) -> str:
         import pages_text
 
         payload = pages_text.document_payload(path)
-        return pages_text.reconstruct(pages_text.extract_runs(payload))
+        return pages_text.trim_to_body(pages_text.reconstruct(pages_text.extract_runs(payload)))
     return open(path, encoding="utf-8").read()
 
 
