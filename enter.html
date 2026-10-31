@@ -115,6 +115,11 @@
             </p>
             <textarea id="pasteInput" rows="6" spellcheck="false"
                 placeholder="1 Gallon&#10;&#10;Week of October 12th, 2026&#10;&#10;500 Lavandula 'Anouk Supreme'&#10;500 Phlomis purpurea&#10;&#10;Total: 1,000&#10;&#10;For 4 inch this week:&#10;&#10;892 Phyla nodiflora (white)"></textarea>
+            <div class="row" style="margin-top:10px;">
+                <input type="file" id="fileInput" accept=".pages,.txt,text/plain,application/octet-stream" style="display:none" onchange="loadListFile(this)">
+                <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">Choose a Pages file&hellip;</button>
+                <span class="hint" id="fileStatus" style="margin-top:0;"></span>
+            </div>
             <div class="row" style="margin-top:12px;">
                 <button class="btn" onclick="reviewPaste()">Parse &amp; review</button>
                 <button class="btn btn-secondary" onclick="clearPaste()">Clear</button>
@@ -845,6 +850,197 @@ function addPasteToBatch() {
     renderBatch();
     showBanner('ok', `Added ${rows.length} rows to the batch below — review, then Submit batch.`);
     document.getElementById('batchTable').scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+
+// ---------- reading a .pages file in the browser ----------
+// A .pages bundle is a zip whose Index/Document.iwa holds snappy-compressed
+// protobuf chunks. No libraries: ZIP central directory is parsed by hand and
+// the browser's own DecompressionStream does the inflate. Mirrors
+// scripts/pages_text.py, so a file uploaded here and a file run through the
+// script produce the same text.
+
+function bytesToLatin1(u8) {
+    let s = '';
+    const CHUNK = 8192;
+    for (let i = 0; i < u8.length; i += CHUNK) {
+        s += String.fromCharCode.apply(null, u8.subarray(i, i + CHUNK));
+    }
+    return s;
+}
+
+function snappyDecompress(src) {
+    let pos = 0, len = 0, shift = 0;
+    while (pos < src.length) {
+        const b = src[pos++];
+        len |= (b & 0x7f) << shift;
+        if (!(b & 0x80)) break;
+        shift += 7;
+    }
+    const out = new Uint8Array(len);
+    let op = 0;
+    while (pos < src.length) {
+        const tag = src[pos++];
+        const kind = tag & 3;
+        if (kind === 0) {
+            let l = tag >> 2;
+            if (l < 60) {
+                l += 1;
+            } else {
+                const extra = l - 59;
+                l = 0;
+                for (let i = 0; i < extra; i++) l |= src[pos++] << (8 * i);
+                l += 1;
+            }
+            for (let i = 0; i < l; i++) out[op++] = src[pos++];
+            continue;
+        }
+        let l, off;
+        if (kind === 1) {
+            l = ((tag >> 2) & 7) + 4;
+            off = ((tag >> 5) << 8) | src[pos++];
+        } else if (kind === 2) {
+            l = (tag >> 2) + 1;
+            off = src[pos] | (src[pos + 1] << 8);
+            pos += 2;
+        } else {
+            l = (tag >> 2) + 1;
+            off = src[pos] | (src[pos + 1] << 8) | (src[pos + 2] << 16) | (src[pos + 3] << 24);
+            pos += 4;
+        }
+        if (off === 0 || off > op) break;
+        const start = op - off;
+        for (let i = 0; i < l; i++) out[op + i] = out[start + i];
+        op += l;
+    }
+    return out.subarray(0, op);
+}
+
+async function unzipEntry(buf, wantName) {
+    const dv = new DataView(buf);
+    const u8 = new Uint8Array(buf);
+    const dec = new TextDecoder();
+
+    let eocd = -1;
+    const floor = Math.max(0, buf.byteLength - 66000);
+    for (let i = buf.byteLength - 22; i >= floor; i--) {
+        if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    }
+    if (eocd < 0) throw new Error('not a zip archive');
+
+    const count = dv.getUint16(eocd + 10, true);
+    let off = dv.getUint32(eocd + 16, true);
+
+    for (let i = 0; i < count; i++) {
+        if (dv.getUint32(off, true) !== 0x02014b50) throw new Error('damaged zip directory');
+        const method = dv.getUint16(off + 10, true);
+        const compSize = dv.getUint32(off + 20, true);
+        const nameLen = dv.getUint16(off + 28, true);
+        const extraLen = dv.getUint16(off + 30, true);
+        const commentLen = dv.getUint16(off + 32, true);
+        const localOff = dv.getUint32(off + 42, true);
+        const name = dec.decode(u8.subarray(off + 46, off + 46 + nameLen));
+        off += 46 + nameLen + extraLen + commentLen;
+
+        if (name !== wantName) continue;
+
+        const lNameLen = dv.getUint16(localOff + 26, true);
+        const lExtraLen = dv.getUint16(localOff + 28, true);
+        const start = localOff + 30 + lNameLen + lExtraLen;
+        const data = u8.subarray(start, start + compSize);
+
+        if (method === 0) return data;
+        if (method !== 8) throw new Error('unsupported zip compression (' + method + ')');
+        const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+        return new Uint8Array(await new Response(stream).arrayBuffer());
+    }
+    throw new Error(wantName + ' not found in the document');
+}
+
+function iwaText(u8) {
+    const chunks = [];
+    let pos = 0;
+    while (pos + 4 <= u8.length) {
+        const type = u8[pos];
+        const ln = u8[pos + 1] | (u8[pos + 2] << 8) | (u8[pos + 3] << 16);
+        const body = u8.subarray(pos + 4, pos + 4 + ln);
+        pos += 4 + ln;
+        if (body.length !== ln) break;
+        chunks.push(type === 0 ? snappyDecompress(body) : body);
+    }
+
+    // stitches runs back together: spaces and paragraph breaks live at run
+    // boundaries, so nothing may be trimmed here
+    let total = 0;
+    for (const c of chunks) total += c.length;
+    const all = new Uint8Array(total);
+    let at = 0;
+    for (const c of chunks) { all.set(c, at); at += c.length; }
+
+    const latin1 = bytesToLatin1(all);
+    const RUN = /[\x20-\x7e\xc2-\xf4][\x20-\x7e\x80-\xbf]*/g;
+    const decoder = new TextDecoder('utf-8', { fatal: true });
+    const runs = [];
+    let m;
+    while ((m = RUN.exec(latin1)) !== null) {
+        const raw = m[0];
+        const bytes = new Uint8Array(raw.length);
+        for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+        let s;
+        try { s = decoder.decode(bytes); } catch (e) { continue; }
+        if (!s) continue;
+        if (s.length < 2 && !startsParagraph(s)) continue;
+        runs.push(s);
+    }
+
+    let out = '', cur = '';
+    for (const s of runs) {
+        if (!looksLikeRun(s)) continue;
+        if (startsParagraph(s) && cur) { out += cur + '\n'; cur = s; }
+        else cur += s;
+    }
+    if (cur) out += cur;
+    return out.split('\n').map(l => l.replace(/\s+$/, '')).join('\n').trim();
+}
+
+function startsParagraph(s) {
+    if (/^\s*\d[\d,]*\s+\S/.test(s)) return true;
+    if (/^(Total:|Week of |For \d|For [A-Za-z0-9 ]{1,12}( this week)?:|\d+\s*(Gallon|gal)\b)/i.test(s.trim())) return true;
+    return false;
+}
+
+function looksLikeRun(s) {
+    if (/^[\u2018\u2019\u201c\u201d'"]/.test(s) || startsParagraph(s)) return true;
+    return /[A-Za-z]{2}/.test(s);
+}
+
+async function textFromPages(buf) {
+    const doc = await unzipEntry(buf, 'Index/Document.iwa');
+    return iwaText(doc);
+}
+
+function setFileStatus(msg) {
+    document.getElementById('fileStatus').textContent = msg;
+}
+
+async function loadListFile(input) {
+    const f = input.files && input.files[0];
+    if (!f) return;
+    setFileStatus('Reading ' + f.name + '…');
+    try {
+        const buf = await f.arrayBuffer();
+        const head = new Uint8Array(buf, 0, 2);
+        const isZip = head[0] === 0x50 && head[1] === 0x4b;
+        const text = isZip ? await textFromPages(buf) : new TextDecoder().decode(buf);
+        if (!text || !text.trim()) throw new Error('no text found in the document');
+        document.getElementById('pasteInput').value = text;
+        setFileStatus(f.name + ' — read ' + text.split('\n').length + ' lines');
+        await reviewPaste();
+    } catch (e) {
+        setFileStatus('');
+        showBanner('err', 'Could not read that file: ' + (e.message || e));
+    } finally {
+        input.value = '';  // allow re-selecting the same file
+    }
 }
 
 // ---------- misc ----------
